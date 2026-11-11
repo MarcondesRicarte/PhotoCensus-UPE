@@ -16,7 +16,7 @@ from black_box import *  # noqa: E402,F401,F403
 def main():
     print("PhotoCensus - Group 07")
 
-
+    print ("tudo inicou aqui!")
     
 
 
@@ -35,7 +35,7 @@ def main():
 
 
 
-    
+
 
 
 if __name__ == "__main__":
