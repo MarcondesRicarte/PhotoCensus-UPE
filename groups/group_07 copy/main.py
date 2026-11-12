@@ -125,11 +125,35 @@ def main():
             ocorrencias = count_class(caminho_imagem, nome_classe, confidence_pad_level)
             print(f"\nClasse pesquisada: {nome_classe}")
             print(f"Total encontrado na imagem (confiança >= {confidence_pad_level}): {ocorrencias}")
-            
 
+        elif decision == "4":
+            print("\n--Relatorio da pasta:")
+            diretorio = perguntar_pasta()
+            qtd_imagens = total_photos(diretorio)
 
+            soma_objetos = 0
+            imagens_sem_nada = 0
+            indice = 1
 
+            while indice <= qtd_imagens:
+                arquivo_atual = photo_name(diretorio, indice)
+                qtd_na_foto = count_objects(arquivo_atual, confidence_pad_level)
 
+                print(f"Imagem {indice} -> {arquivo_atual}: {qtd_na_foto} objeto(s)")
+
+                soma_objetos += qtd_na_foto
+                if qtd_na_foto == 0:
+                    imagens_sem_nada += 1
+
+                indice += 1
+
+            media_por_foto = soma_objetos / qtd_imagens
+            print("\n--- Resumo do Diretório ---")
+            print(f"\nSoma total de objetos encontrados na pasta '{diretorio}': {soma_objetos}")
+            print(f"Total de imagens sem objetos: {imagens_sem_nada}")
+            print(f"Média de objetos por imagem: {media_por_foto:.2f}")
+
+        
 
 
 
