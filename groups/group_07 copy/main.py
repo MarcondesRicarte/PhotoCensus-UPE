@@ -118,7 +118,7 @@ def main():
 
             nome_classe=""
             while nome_classe=="":
-                nome_classe = input("Digite o nome da classe desejada: ").lower()
+                nome_classe = input("Digite o nome da classe desejada: ").lower().strip()
                 if nome_classe=="":
                     print("Nome da classe não pode ser vazio. Tente novamente.")
 
@@ -176,15 +176,45 @@ def main():
             print(f"Imagem mais vazia: {imagem_mais_vazia} com {recorde_mais_vazia} objeto(s)")
 
         elif decision == "6":
+            print("\n--Procurar classe na pasta:")
+            diretorio = perguntar_pasta()
+            qtd_imagens = total_photos(diretorio)
+            show_classes()
+            alvo = ""
+            while alvo == "":
+                alvo = input("Digite o nome da classe desejada: ").lower().strip()
+                if alvo == "":
+                    print("Nome da classe não pode ser vazio. Tente novamente.")
+
+            fotos_positivas = 0
+            soma_da_classe = 0
+            for idx in range(1, qtd_imagens + 1):
+                imagem_atual = photo_name(diretorio, idx)
+                achados = count_class(imagem_atual, alvo, confidence_pad_level)
+                if achados > 0:
+                    fotos_positivas += 1
+                    soma_da_classe += achados
+            percentual = (fotos_positivas / qtd_imagens) * 100
             
+            print(f"\nResultados para a classe '{alvo}' na pasta '{diretorio}' (confiança >={confidence_pad_level})':")
+            print(f"Presente em {fotos_positivas} de {qtd_imagens} fotos ({percentual:.2f}%)")
+            print(f"Total de aparições da classe: {soma_da_classe}")
 
+        elif decision =="7":
+            print("\n--Grafico de barras da classe:")
+            diretorio = perguntar_pasta()
+            qtd_imagens = total_photos(diretorio)
+            print(f"\nDistribuição de objetos em {diretorio} (confiança >={confidence_pad_level}):")
+            for idx in range(1, qtd_imagens + 1):
+                imagem_atual = photo_name(diretorio, idx)
+                qtd_na_foto = count_objects(imagem_atual, confidence_pad_level)
+                barra_visual = ""
+                for _ in range(qtd_na_foto):
+                    barra_visual = barra_visual + "="
+                print(f"Imagem {idx:02d}: [{barra_visual}] ({qtd_na_foto} objeto(s))")
 
-
-
-
-
-
-
+        else:
+            print("Opção inválida. Tente novamente um número de 1 a 7.")
 
 
 
