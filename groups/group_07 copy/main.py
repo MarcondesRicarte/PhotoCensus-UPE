@@ -111,7 +111,21 @@ def main():
                 print("Nenhum objeto atingiu a confiança desejada.")
 
         elif decision == "3":
+            print("\n--Contar uma classe de fotos:")
+            caminho_imagem = perguntar_foto()
+            show_classes()
 
+
+            nome_classe=""
+            while nome_classe=="":
+                nome_classe = input("Digite o nome da classe desejada: ").lower()
+                if nome_classe=="":
+                    print("Nome da classe não pode ser vazio. Tente novamente.")
+
+            ocorrencias = count_class(caminho_imagem, nome_classe, confidence_pad_level)
+            print(f"\nClasse pesquisada: {nome_classe}")
+            print(f"Total encontrado na imagem (confiança >= {confidence_pad_level}): {ocorrencias}")
+            
 
 
 
