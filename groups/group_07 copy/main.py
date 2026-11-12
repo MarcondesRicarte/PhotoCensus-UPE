@@ -33,7 +33,7 @@ def perguntar_pasta():
 
 
 def perguntar_foto():
-    diretorio = ask_folder()
+    diretorio = perguntar_pasta()
     quantidade_imagens = total_photos(diretorio)
     print(f"Total de imagens disponiveis em {diretorio}: {quantidade_imagens}")
     indice_valido = False
@@ -103,15 +103,17 @@ def main():
             print(f"Quantidade de objetos(confiança minima de {confidence_pad_level}): {detectados}")
 
             if detectados > 0:
-                objetos_destaque = main_objects(caminho_imagem)
-                maior_taxa = confiança_maxima(caminho_imagem)*100
+                objetos_destaque = main_object(caminho_imagem)
+                maior_taxa = max_confidence(caminho_imagem)*100
                 print(f"Objetos de destaque: {objetos_destaque}")
                 print(f"Maior taxa de confiança: {maior_taxa:.2f}%")
             else:
                 print("Nenhum objeto atingiu a confiança desejada.")
 
+        elif decision == "3":
 
-                
+
+
 
 
 
