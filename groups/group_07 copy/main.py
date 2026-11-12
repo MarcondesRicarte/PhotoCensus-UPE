@@ -97,8 +97,22 @@ def main():
 
         elif decision == "2":
             print("\n--Analisar fotos:")
-            nome_pasta = perguntar_pasta()
-            analisar_fotos(nome_pasta, confidence_pad_level)
+            caminho_imagem = perguntar_foto()
+            detectados = count_objects(caminho_imagem, confidence_pad_level)
+            print(f"\n Arquivo analisado: {caminho_imagem}")
+            print(f"Quantidade de objetos(confiança minima de {confidence_pad_level}): {detectados}")
+
+            if detectados > 0:
+                objetos_destaque = main_objects(caminho_imagem)
+                maior_taxa = confiança_maxima(caminho_imagem)*100
+                print(f"Objetos de destaque: {objetos_destaque}")
+                print(f"Maior taxa de confiança: {maior_taxa:.2f}%")
+            else:
+                print("Nenhum objeto atingiu a confiança desejada.")
+
+
+                
+
 
 
 
