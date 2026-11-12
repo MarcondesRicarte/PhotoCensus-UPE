@@ -13,6 +13,13 @@ sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *  # noqa: E402,F401,F403
 
 
+def perguntar_foto():
+    
+
+
+
+
+
 def main():
     print("PhotoCensus - Group 07")
 
