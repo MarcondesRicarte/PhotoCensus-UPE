@@ -153,11 +153,30 @@ def main():
             print(f"Total de imagens sem objetos: {imagens_sem_nada}")
             print(f"Média de objetos por imagem: {media_por_foto:.2f}")
 
-        
+        elif decision == "5":
+            print("\n--Foto mais cheia e mais vazia:")
+            diretorio = perguntar_pasta()
+            qtd_imagens = total_photos(diretorio)
+            primeira_imagem = photo_name(diretorio, 1)
+            quantidade_inicial = count_objects(primeira_imagem, confidence_pad_level)
+            imagem_mais_cheia = primeira_imagem
+            recorde_mais_cheia = quantidade_inicial
+            imagem_mais_vazia = primeira_imagem
+            recorde_mais_vazia = quantidade_inicial
+            for idx in range (2,qtd_imagens+1):
+                imagem_atual = photo_name(diretorio, idx)
+                quantidade_atual = count_objects(imagem_atual, confidence_pad_level)
+                if quantidade_atual > recorde_mais_cheia:
+                    recorde_mais_cheia = quantidade_atual
+                    imagem_mais_cheia = imagem_atual
+                if quantidade_atual < recorde_mais_vazia:
+                    recorde_mais_vazia = quantidade_atual
+                    imagem_mais_vazia = imagem_atual
+            print(f"\nImagem mais cheia: {imagem_mais_cheia} com {recorde_mais_cheia} objeto(s)")        
+            print(f"Imagem mais vazia: {imagem_mais_vazia} com {recorde_mais_vazia} objeto(s)")
 
-
-
-
+        elif decision == "6":
+            
 
 
 
