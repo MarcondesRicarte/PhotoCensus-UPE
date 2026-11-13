@@ -216,7 +216,5 @@ def main():
         else:
             print("Opção inválida. Tente novamente um número de 1 a 7.")
 
-
-
 if __name__ == "__main__":
     main()
