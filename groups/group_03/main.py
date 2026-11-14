@@ -116,6 +116,37 @@ def main():
             print(f"Class: '{class_name}': {total_class} object(s) found (min_confidence: {min_confidence_level:.2f})")
 
 
+        elif option == "4":
+
+            folder = ask_folder()
+            total = total_photos(folder)
+
+            total_obejcts = 0
+            empty_photos = 0
+
+            print(f"--- Folder Report: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
+
+            for number in range(1, total + 1):
+                photo = photo_name(folder, number)
+                qtd = count_objects(photo, min_confidence_level)
+
+                print(f"Photo {number} ({photo}): {qtd} object(s)")
+                total_obejcts += qtd
+
+                if qtd == 0:
+                    empty_photos += 1
+
+            if total > 0:
+                avarage = total_obejcts / total
+            else:
+                avarage = 0.0
+
+            print("-" * 40)
+            print(f"Total objects in folder: {total_obejcts}")
+            print(f"Avarege objects per photo: {avarage:.2f}")
+            print(f"Photos with no objects: {empty_photos}")
+
+
         elif option == "0":
             print("Exiting system. Goodbye!")
             break
@@ -128,41 +159,3 @@ if __name__ == "__main__":
     print("=" * 50)
 
 
-# --- Menu Principal ---
-
-def menu():
-    caminho_atual = None
-    detecoes_atuais = []
-
-    while True:
-        print("\n" + "#" * 35)
-        print("      PHOTOCENSUS - GRUPO 03")
-        print("#" * 35)
-        print("1. Processar nova imagem")
-        print("2. Ver relatório e gráfico de barras")
-        print("3. Limpar dados em memória")
-        print("0. Sair")
-        print("#" * 35)
-
-        opcao = input("Selecione uma opção: ").strip()
-
-        if opcao == "1":
-            caminho, detecoes = processar_imagem()
-            if caminho is not None:
-                caminho_atual = caminho
-                detecoes_atuais = detecoes
-        elif opcao == "2":
-            exibir_relatorio(caminho_atual, detecoes_atuais)
-        elif opcao == "3":
-            caminho_atual = None
-            detecoes_atuais = []
-            print("Memória limpa com sucesso.")
-        elif opcao == "0":
-            print("\nA encerrar o PhotoCensus. Até breve!")
-            break
-        else:
-            print("Opção inválida. Tente novamente.")
-
-
-if __name__ == "__main__":
-    menu() 
