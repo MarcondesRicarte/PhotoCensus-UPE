@@ -145,7 +145,7 @@ def main():
                 folder = input('Digite o nome da pasta:').strip()
 
             # total folder photos
-            # total de fotos na pasta
+            # total de fotos na pasta e contagem dos objetos com as fotos vazias
             total = total_photos(folder)
             total_objects = 0
             empty_photos = 0
@@ -165,7 +165,7 @@ def main():
                     empty_photos = empty_photos + 1
                 number += 1
             # average of objects per photo
-            # média de objetos por foto fora do loop "for"
+            # média de objetos por foto 
             average = total_objects / total
 
             print('-' * 30)
