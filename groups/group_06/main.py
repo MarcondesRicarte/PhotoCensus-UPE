@@ -118,7 +118,7 @@ def ask_photo_number(folder):
         print("Invalid number! Try again.")
         raw_input = input(f"Photo number (1 to {total}): ").strip()
 
-    return int(raw_input)  # agora é seguro: converte o texto "3" no número 3
+    return int(raw_input)  # converte o texto "3" no número 3
 
 
 def ask_confidence():
