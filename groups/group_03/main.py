@@ -183,6 +183,46 @@ def main():
             print(f"Least populated: photo {least_number} ({photo_name(folder, least_number)}) with {least_qtd} object(s)")
 
 
+        elif option == "6":
+
+            #Show folders and get folder name
+            folder=ask_folder()           
+            while folder== "":
+                print("❌ Class name cannot be empty!")
+                folder=input("Enter folder name:").strip().lower()
+            print()
+
+            #Store the total number of photos of the folder
+            total_phts=total_photos(folder)
+
+            #Show classes and get class name
+            show_classes()
+            class_name=input("Enter class name (e.g., car, person):").strip().lower()
+            while class_name == "":
+                print("❌ Class name cannot be empty!")
+                class_name = input("Enter class name (e.g., car, person):").strip().lower()
+            print()
+            
+            #Loop through each photo to count occurrences and track matching photos
+            photos_with_class=0
+            total_appearances=0
+            for number in range (1,total_phts+1):
+                photo=photo_name(folder, number)
+                found=count_class(photo,class_name,min_confidence_level)
+                if found >0:
+                    photos_with_class+=1
+                total_appearances+=found
+
+            #Calculate appearance percentage
+            percentage=(photos_with_class/total_phts)*100
+
+            #Output final results
+            print("-" * 40)
+            print(f"Total number of times {class_name} appeared in folder {folder}: {total_appearances}")
+            print(f"Number of photos where {class_name} appeared: {photos_with_class}")
+            print(f"Percentage of appearance of {class_name} in folder {folder}: {percentage:.2f}%")
+
+
         elif option == "0":
             print("Exiting system. Goodbye!")
             break
