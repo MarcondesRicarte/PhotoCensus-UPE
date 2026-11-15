@@ -41,9 +41,9 @@ def main():
 
     while True:
         print("\n" + "=" * 40)
-        print(f"{"PHOTOCENSUS - MENU":^40} Grupo 03")
+        print(f"{'PHOTOCENSUS - MENU':^40} Grupo 03")
         print("=" * 40)
-        print(f"Current minimun confidence: {min_confidence_level:.2f}")
+        print(f"Current minimum confidence: {min_confidence_level:.2f}")
         print("-" * 40)
         # Configurar confiança mínima
         print("[ 1 ] - Change minimum confidence")
@@ -58,7 +58,7 @@ def main():
         # Procurar uma classe na pasta
         print("[ 6 ] - Search class in folder")
         # Gráfico de barras em texto
-        print("[ 7 ] - Bar char (text)")
+        print("[ 7 ] - Bar chart (text)")
         # Encerrar Programa
         print("[ 0 ] - Exit")
         print("=" * 40)
@@ -74,7 +74,7 @@ def main():
                 new_conf = float(input("Enter new confidence (0.0 to 1.0): ").strip())
 
             min_confidence_level = new_conf
-            print(f"✅ Minimum confidence update to {min_confidence_level:.2f}")
+            print(f"✅ Minimum confidence updated to {min_confidence_level:.2f}")
 
 
         elif option == "2":
@@ -121,7 +121,7 @@ def main():
             folder = ask_folder()
             total = total_photos(folder)
 
-            total_obejcts = 0
+            total_objects = 0
             empty_photos = 0
 
             print(f"--- Folder Report: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
@@ -131,35 +131,28 @@ def main():
                 qtd = count_objects(photo, min_confidence_level)
 
                 print(f"Photo {number} ({photo}): {qtd} object(s)")
-                total_obejcts += qtd
+                total_objects += qtd
 
                 if qtd == 0:
                     empty_photos += 1
 
             if total > 0:
-                avarage = total_obejcts / total
+                average = total_objects / total
             else:
-                avarage = 0.0
+                average = 0.0
 
             print("-" * 40)
-            print(f"Total objects in folder: {total_obejcts}")
-            print(f"Avarege objects per photo: {avarage:.2f}")
+            print(f"Total objects in folder: {total_objects}")
+            print(f"Average objects per photo: {average:.2f}")
             print(f"Photos with no objects: {empty_photos}")
 
-
-        elif option == "0":
-            print("Exiting system. Goodbye!")
-            break
-
-        else:
-            print("❌ Invalid option! Please try again.")
 
         elif option == "5":
 
             folder = ask_folder()
             total = total_photos(folder)
 
-            # Começa com a foto 1 como a mais cheia e a mais vazia
+            # Start with photo 1 as both the most and the least populated
             first_photo = photo_name(folder, 1)
             first_qtd = count_objects(first_photo, min_confidence_level)
 
@@ -170,14 +163,17 @@ def main():
 
             print(f"--- Most and least populated photo: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
 
+            # Compare the remaining photos (2 to total) against the current records
             for number in range(2, total + 1):
                 photo = photo_name(folder, number)
                 qtd = count_objects(photo, min_confidence_level)
 
+                # New record for most populated
                 if qtd > most_qtd:
                     most_qtd = qtd
                     most_number = number
 
+                # New record for least populated
                 if qtd < least_qtd:
                     least_qtd = qtd
                     least_number = number
@@ -186,3 +182,14 @@ def main():
             print(f"Most populated: photo {most_number} ({photo_name(folder, most_number)}) with {most_qtd} object(s)")
             print(f"Least populated: photo {least_number} ({photo_name(folder, least_number)}) with {least_qtd} object(s)")
 
+
+        elif option == "0":
+            print("Exiting system. Goodbye!")
+            break
+
+        else:
+            print("❌ Invalid option! Please try again.")
+
+
+if __name__ == "__main__":
+    main()
