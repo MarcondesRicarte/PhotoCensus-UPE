@@ -67,15 +67,15 @@ def main():
 
         if option == "1":
             # Configure minimum confidence threshold (must be between 0.0 and 1.0)
-            new_conf = float(input("Enter new confidence (0.0 to 1.0): ").strip())
+            new_conf = input("Enter new confidence (0.0 to 1.0): ").strip()
 
-            # Validate input until a valid confidence value is provided
-            while new_conf < 0.0 or new_conf > 1.0:
-                print("❌ Invalid confidence! Value must be between 0.0 and 1.0")
-                new_conf = float(input("Enter new confidence (0.0 to 1.0): ").strip())
+            # Validate that the input is a valid number AND within the 0.0 to 1.0 range
+            while not new_conf.replace(".", "", 1).isdigit() or float(new_conf) < 0.0 or float(new_conf) > 1.0:
+                print("❌ Invalid confidence! Enter a numeric value between 0.0 and 1.0.")
+                new_conf = input("Enter new confidence (0.0 to 1.0): ").strip()
 
             # Update the active confidence level used across all other options
-            min_confidence_level = new_conf
+            min_confidence_level = float(new_conf)
             print(f"✅ Minimum confidence updated to {min_confidence_level:.2f}")
 
 
@@ -200,10 +200,6 @@ def main():
 
             #Show folders and get folder name
             folder=ask_folder()   
-
-            while folder== "":
-                print("❌ Class name cannot be empty!")
-                folder=input("Enter folder name:").strip().lower()
             print()
 
             #Store the total number of photos of the folder
