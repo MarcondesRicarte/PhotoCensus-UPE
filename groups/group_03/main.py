@@ -41,66 +41,74 @@ def main():
 
     while True:
         print("\n" + "=" * 40)
-        print(f"{'PHOTOCENSUS - MENU':^40} Grupo 03")
+        print(f"{'PHOTOCENSUS - MENU':^40} Group 03")
         print("=" * 40)
         print(f"Current minimum confidence: {min_confidence_level:.2f}")
         print("-" * 40)
-        # Configurar confiança mínima
+        # Configure minimum confidence
         print("[ 1 ] - Change minimum confidence")
-        # Analisar foto
+        # Analyze a photo
         print("[ 2 ] - Analyze a photo")
-        # Contar uma classe na foto
+        # Count class in a photo
         print("[ 3 ] - Count class in a photo")
-        # Relatório da pasta
+        # Folder report
         print("[ 4 ] - Folder report")
-        # Foto mais cheia e mais vazia
+        # Most and least populated photo
         print("[ 5 ] - Most and least populated photo")
-        # Procurar uma classe na pasta
+        # Search class in folder
         print("[ 6 ] - Search class in folder")
-        # Gráfico de barras em texto
+        # Text-based bar chart
         print("[ 7 ] - Bar chart (text)")
-        # Encerrar Programa
+        # Exit program
         print("[ 0 ] - Exit")
         print("=" * 40)
 
         option = input("Choose an option: ").strip()
 
         if option == "1":
-            # Configurar a confiança mínima (validada entre 0 e 1)
+            # Configure minimum confidence threshold (must be between 0.0 and 1.0)
             new_conf = float(input("Enter new confidence (0.0 to 1.0): ").strip())
 
+            # Validate input until a valid confidence value is provided
             while new_conf < 0.0 or new_conf > 1.0:
                 print("❌ Invalid confidence! Value must be between 0.0 and 1.0")
                 new_conf = float(input("Enter new confidence (0.0 to 1.0): ").strip())
 
+            # Update the active confidence level used across all other options
             min_confidence_level = new_conf
             print(f"✅ Minimum confidence updated to {min_confidence_level:.2f}")
 
 
         elif option == "2":
-
+            # Analyze a single photo
             folder = ask_folder()
             num = ask_photo_number(folder)
             photo = photo_name(folder, num)
 
+            # Retrieve object statistics from the black-box functions
             total_objs = count_objects(photo, min_confidence_level)
             main_obj = main_object(photo)
             highest_conf = max_confidence(photo)
 
+            # Display photo path, object count, main object, and highest confidence as a percentage
             print(f"\n--- Photo Analysis ---")
             print(f"Path: {photo}")
             print(f"Total objects: {total_objs}")
             if main_obj:
                 print(f"Main object: {main_obj}")
+            else:
+                print("Main object: None")
             print(f"Highest confidence: {highest_conf * 100:.1f}%")
 
 
-        elif option == "3":
 
+        elif option == "3":
+            # Count occurrences of a specific class in a single photo
             folder = ask_folder()
             num = ask_photo_number(folder)
             photo = photo_name(folder, num)
 
+            # Show available classes and ensure the user does not enter an empty string
             print()
             show_classes()
             class_name = input("Enter class name (e.g., car, person): ").strip().lower()
@@ -109,6 +117,7 @@ def main():
                 print("❌ Class name cannot be empty!")
                 class_name = input("Enter class name (e.g., car, person): ").strip().lower()
 
+            # Count how many objects of the specified class meet the minimum confidence
             total_class = count_class(photo, class_name, min_confidence_level)
 
             print("\n--- Class Count ---")
@@ -117,15 +126,17 @@ def main():
 
 
         elif option == "4":
-
+            # Generate a complete summary report for a folder
             folder = ask_folder()
             total = total_photos(folder)
 
+            # Initialize accumulators for total objects and empty photos
             total_objects = 0
             empty_photos = 0
 
             print(f"--- Folder Report: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
 
+            # Loop through every photo in the folder
             for number in range(1, total + 1):
                 photo = photo_name(folder, number)
                 qtd = count_objects(photo, min_confidence_level)
@@ -133,9 +144,11 @@ def main():
                 print(f"Photo {number} ({photo}): {qtd} object(s)")
                 total_objects += qtd
 
+                # Track photos where no objects met the confidence
                 if qtd == 0:
                     empty_photos += 1
 
+            # Calculate average objects per photo manually (avoiding built-in functions)
             if total > 0:
                 average = total_objects / total
             else:
@@ -186,7 +199,8 @@ def main():
         elif option == "6":
 
             #Show folders and get folder name
-            folder=ask_folder()           
+            folder=ask_folder()   
+
             while folder== "":
                 print("❌ Class name cannot be empty!")
                 folder=input("Enter folder name:").strip().lower()
@@ -197,18 +211,20 @@ def main():
 
             #Show classes and get class name
             show_classes()
-            class_name=input("Enter class name (e.g., car, person):").strip().lower()
+            class_name=input("Enter class name (e.g., car, person): ").strip().lower()
             while class_name == "":
                 print("❌ Class name cannot be empty!")
-                class_name = input("Enter class name (e.g., car, person):").strip().lower()
+                class_name = input("Enter class name (e.g., car, person): ").strip().lower()
             print()
             
             #Loop through each photo to count occurrences and track matching photos
             photos_with_class=0
             total_appearances=0
+
             for number in range (1,total_phts+1):
                 photo=photo_name(folder, number)
                 found=count_class(photo,class_name,min_confidence_level)
+
                 if found >0:
                     photos_with_class+=1
                 total_appearances+=found
@@ -221,6 +237,30 @@ def main():
             print(f"Total number of times {class_name} appeared in folder {folder}: {total_appearances}")
             print(f"Number of photos where {class_name} appeared: {photos_with_class}")
             print(f"Percentage of appearance of {class_name} in folder {folder}: {percentage:.2f}%")
+
+
+        elif option == "7":
+            # Text-based bar chart using nested loops
+            folder = ask_folder()
+            total = total_photos(folder)
+
+            print(f"\n--- Bar Chart: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
+
+            # Outer loop: iterate through every photo in the folder
+            for num in range(1, total + 1):
+                photo = photo_name(folder, num)
+                qtd = count_objects(photo, min_confidence_level)
+
+                base_name = os.path.basename(photo)
+                label = base_name.replace(".jpg", "")
+                bar = ""
+
+                # Inner loop: build the bar string with one '#' per detected object
+                for _ in range(qtd):
+                    bar += "#"
+
+                # Print aligned row matching the format: street_04
+                print(f"{label:<15} | {bar} ({qtd})")
 
 
         elif option == "0":
