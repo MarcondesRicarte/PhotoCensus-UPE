@@ -12,11 +12,12 @@ GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *   # noqa: E402,F401,F403
 
+
 MSG_INVALID = "Digite um valor válido!"
 
 confidence = 0.5
 
-#Entrada
+#Entradas
 def choose_folder():
     #Verifica se a pasta escolhida existe
     show_folders()
@@ -24,7 +25,7 @@ def choose_folder():
     folder = input("Escolha uma pasta: ")
     
     while not folder_exists(folder): 
-        print("Digite um valor válido!")
+        print(MSG_INVALID)
         show_folders()
         folder = input("Escolha uma pasta: ")
     return folder
@@ -38,21 +39,12 @@ def choose_photo(folder):
             number = int(input(f"Escolha uma foto (de 1 a {total}): "))
             if 1 <= number <= total:
                 break
-            print("Digite um valor válido!")
+            print(MSG_INVALID) #o que esse print faz aqui???
         except ValueError:
-            print("Digite um valor válido!")
+            print(MSG_INVALID)
 
     photo = photo_name(folder, number)
     return photo
-
-def show_menu(confidence):
-    print('\n--- OPTIONS ---')
-    print(f'-- Confiança Mínima atual {confidence}--\n')
-    print('1 - configurar a confiança mínima')
-    print('2 - Analisar uma foto')
-    print('3 - Analisar uma pasta')
-    print('0 - Sair')
-    return input("Escolha uma opção: ")
 
 def set_minimal_confidence():
     #Define a confiança mínima entre 0.0 e 1.0
@@ -69,69 +61,164 @@ def set_minimal_confidence():
        
     confidence = new
 
-#Processamento
-def relatorio_pasta(folder):
-
-    total = 0
-    vazios = 0
-    caminho = photo_name(folder, p)
-    
-    for p in range(1,total_photos(folder)+1):
-        objetos = count_objects(caminho)
-        print(f"foto {p}: {objetos}")
-        if objetos == 0:
-            vazios += 1
-        else:
-            total += objetos
-        
-    print(f"Total geral: {total}")
-    print(f"Objetos por foto: {total/total_photos(folder)}")
-    print(f"Fotos sem nenhum objeto: {vazios}")
-
-def count_photo_class(confidence, photo): #classe da foto
-
-    show_classes()
-    class_name = input("Digite uma classe para buscar objetos: ")
-
-
-    print(f"Há {count_class(photo, class_name, confidence)} objetos com a classe {class_name}")
-
-def photo_analyze(confidence):#analise da foto
-    folder = choose_folder()
-
-    photo = choose_photo(folder)
-
-    while True:
-        print("\n1 - Análise geral")
-        print("2 - Contar uma classe\n")
-        opcao = input("Escolha uma opção: ")
-
-        if opcao == "1":
-            show_photo_summary(photo,confidence)
-            break
-
-        elif opcao == "2":
-            count_photo_class(confidence, photo)
-            break 
-
-        else:
-            print("Digite um valor válido")
-
-def show_photo_summary(photo, confidence):
+#Opções do menu
+def show_photo_summary(photo, confidence): #requisito 4
+    # Mostra as principais informações detectadas na foto.
     print(f"Caminho: {photo}")
     print(f"Objetos detectados: {count_objects(photo,confidence)}")
     print(f"Objeto de maior confiança: {main_object(photo)}")
     print(f"Maior confiança: {max_confidence(photo) *100:.0f}%")
 
-def folder_analyze(folder):
-    choose_folder()
+def count_photo_class(confidence, photo): #requisito 5
+    #imprime a quantidade de objetos com a mesma classe na foto
+    show_classes()
+    class_name = input("Digite uma classe para buscar objetos: ")
 
-    print("1 - Relatório da pasta")
+    print(f"Há {count_class(photo, class_name, confidence)} objetos com a classe {class_name}")
 
-    opcao = input("Escolha uma opção: ")
+def report_folder(folder, confidence): #requisito 6
+    #percorre todas as fotos da pasta e conta os objetos
+    photos = total_photos(folder)
+    empty = 0                       #fotos sem objetos
+    total = 0                       #total de objetos
+    
+    for photo_number in range(1,photos+1):
+        photo = photo_name(folder, photo_number)
+        objects = count_objects(photo, confidence)
+        #recebe e imprime os objetos da foto iterada
+        print(f"foto {photo_number}: {objects}")
 
-    if opcao == "1":
-        relatorio_pasta(folder)
+        #incrementa o total de objetos e as fotos vazias
+        total += objects
+        if objects == 0: 
+            empty += 1 
+
+    print(f"Total geral: {total}")
+    print(f"Média de objetos por foto: {total / photos}")
+    print(f"Fotos sem nenhum objeto: {empty}")
+
+def find_fullest_emptiest(folder,confidence): #requisito 7
+    #percorre a pasta comparando a qtd. de objetos das fotos
+    total = total_photos(folder)
+
+    #caminho e quantidade de objetos da foto mais cheia
+    fullest_photo = photo_name(folder,1) #retorna o caminho da primeira foto
+    fullest_objects = count_objects(fullest_photo, confidence) 
+
+    #define que a 1ª foto é o valor inicial de ambos
+    emptiest_photo = fullest_photo
+    emptiest_objects = fullest_objects
+
+    for photo_number in range(2, total+1):
+        photo = photo_name(folder, photo_number)
+        objects = count_objects(photo,confidence)
+
+        #compara e atualiza as variaveis
+        if objects > fullest_objects:
+            fullest_objects = objects
+            fullest_photo = photo
+
+        if objects < emptiest_objects:
+            emptiest_objects = objects
+            emptiest_photo = photo
+
+    print(f"Foto com mais objetos: {fullest_photo}\nTotal: {fullest_objects}")
+    print(f"Foto com menos objetos: {emptiest_photo}\nTotal: {emptiest_objects}")
+
+def find_class_in_folder(folder,confidence): #requisito 8
+    show_classes()
+    class_name = input("Escolha uma classe: ")
+
+    # Conta em quantas fotos a classe aparece e o total de objetos encontrados.
+    total = total_photos(folder)
+    photo_with_class = 0
+    total_objects = 0
+
+    for photo_number in range(1, total+1):
+        photo = photo_name(folder, photo_number)
+        class_count = count_class(photo, class_name, confidence)
+
+        if class_count > 0:
+            photo_with_class += 1
+            total_objects += class_count
+
+    print(f"A classe aparece em {photo_with_class} fotos")
+    print(f"Total de objetos com a classe: {total_objects}")
+    print(f"A classe está presente em {(photo_with_class / total) *100:.1f}% da pasta")
+
+def show_bar_chart(folder, confidence): #requisito 9
+    total = total_photos(folder)
+
+    # Monta uma barra de # para cada objeto detectado em cada foto.
+    for photo_number in range(1,total+1):
+        photo = photo_name(folder, photo_number)
+        total_objects = count_objects(photo, confidence)
+        chart = ""
+
+        for objects in range(total_objects):
+            chart += "#" 
+
+        print(f"{folder}_{photo_number} | {chart} ({total_objects})")
+
+
+
+#Menus
+def show_menu(confidence): #menu principal
+    print('\n--- OPTIONS ---')
+    print(f'-- Confiança Mínima atual {confidence}--\n')
+    print('1 - configurar a confiança mínima')
+    print('2 - Analisar uma foto')
+    print('3 - Analisar uma pasta')
+    print('0 - Sair')
+    return input("Escolha uma opção: ")
+
+def analyze_photo(confidence):
+
+    folder = choose_folder()
+    photo = choose_photo(folder)
+
+    #Submenus
+    while True:
+        print("\n1 - Análise geral")
+        print("2 - Contar uma classe\n")
+        option = input("Escolha uma opção: ")
+
+        if option == "1":
+            show_photo_summary(photo,confidence)
+            break
+        elif option == "2":
+            count_photo_class(confidence, photo)
+            break 
+        else:
+            print("Digite um valor válido")
+
+def analyze_folder(confidence):
+    folder = choose_folder()
+
+    # Repete o menu até uma das análises da pasta ser escolhida.
+    while True:
+        print("1 - Relatório da pasta")
+        print("2 - Foto mais cheia e mais vazia")
+        print("3 - Procurar uma classe na pasta")
+        print("4 - Gráfico de barras em texto")
+
+        option = input("Escolha uma opção: ")
+
+        if option == "1":
+            report_folder(folder, confidence)
+            break
+        elif option == "2":
+            find_fullest_emptiest(folder,confidence)
+            break
+        elif option == "3":
+            find_class_in_folder(folder,confidence)
+            break
+        elif option == "4":
+            show_bar_chart(folder, confidence)
+            break
+        else:
+            print(MSG_INVALID)
+
 
 
 
@@ -142,18 +229,18 @@ def main():
     # Your menu (while loop) starts here...
 
     while True:
-        opcao = show_menu(confidence)
+        option = show_menu(confidence)
 
-        if opcao == "1":
-            set_minimal_confidence(confidence)
-        elif opcao == "2":
-            photo_analyze(confidence)
-        elif opcao == "3":
-            folder_analyze()
-        elif opcao == "0":
+        if option == "1":
+            set_minimal_confidence()
+        elif option == "2":
+            analyze_photo(confidence)
+        elif option == "3":
+            analyze_folder(confidence)
+        elif option == "0":
             break
         else:
-            print("Digite um valor válido!")
+            print(MSG_INVALID)
 
 
 

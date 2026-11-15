@@ -4,5 +4,5 @@ Copy this folder to `groups/group_XX/` and replace this file with your group's i
 
 - **Group:** 05
 - **Members:** Josué Lima, Tiago Nascimento
-- **Monitor:** Name
-- **How to run:** `python groups/group_XX/main.py` (from the repository root)
+- **Monitor:** Marcos Andre
+- **How to run:** `python groups/group_05/main.py` (from the repository root)
