@@ -94,6 +94,59 @@ def main():
                 print(f"Main object: {main_obj}")
             print(f"Highest confidence: {highest_conf * 100:.1f}%")
 
+
+        elif option == "3":
+
+            folder = ask_folder()
+            num = ask_photo_number(folder)
+            photo = photo_name(folder, num)
+
+            print()
+            show_classes()
+            class_name = input("Enter class name (e.g., car, person): ").strip().lower()
+
+            while class_name == "":
+                print("❌ Class name cannot be empty!")
+                class_name = input("Enter class name (e.g., car, person): ").strip().lower()
+
+            total_class = count_class(photo, class_name, min_confidence_level)
+
+            print("\n--- Class Count ---")
+            print(f"Photo: {photo}")
+            print(f"Class: '{class_name}': {total_class} object(s) found (min_confidence: {min_confidence_level:.2f})")
+
+
+        elif option == "4":
+
+            folder = ask_folder()
+            total = total_photos(folder)
+
+            total_obejcts = 0
+            empty_photos = 0
+
+            print(f"--- Folder Report: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
+
+            for number in range(1, total + 1):
+                photo = photo_name(folder, number)
+                qtd = count_objects(photo, min_confidence_level)
+
+                print(f"Photo {number} ({photo}): {qtd} object(s)")
+                total_obejcts += qtd
+
+                if qtd == 0:
+                    empty_photos += 1
+
+            if total > 0:
+                avarage = total_obejcts / total
+            else:
+                avarage = 0.0
+
+            print("-" * 40)
+            print(f"Total objects in folder: {total_obejcts}")
+            print(f"Avarege objects per photo: {avarage:.2f}")
+            print(f"Photos with no objects: {empty_photos}")
+
+
         elif option == "0":
             print("Exiting system. Goodbye!")
             break
@@ -101,5 +154,35 @@ def main():
         else:
             print("❌ Invalid option! Please try again.")
 
-if __name__ == "__main__":
-    main()
+        elif option == "5":
+
+            folder = ask_folder()
+            total = total_photos(folder)
+
+            # Começa com a foto 1 como a mais cheia e a mais vazia
+            first_photo = photo_name(folder, 1)
+            first_qtd = count_objects(first_photo, min_confidence_level)
+
+            most_number = 1
+            most_qtd = first_qtd
+            least_number = 1
+            least_qtd = first_qtd
+
+            print(f"--- Most and least populated photo: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
+
+            for number in range(2, total + 1):
+                photo = photo_name(folder, number)
+                qtd = count_objects(photo, min_confidence_level)
+
+                if qtd > most_qtd:
+                    most_qtd = qtd
+                    most_number = number
+
+                if qtd < least_qtd:
+                    least_qtd = qtd
+                    least_number = number
+
+            print("-" * 40)
+            print(f"Most populated: photo {most_number} ({photo_name(folder, most_number)}) with {most_qtd} object(s)")
+            print(f"Least populated: photo {least_number} ({photo_name(folder, least_number)}) with {least_qtd} object(s)")
+
