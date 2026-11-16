@@ -237,13 +237,13 @@ def main():
         # perrcorrer as fotos
             for numero in range(1, total_fotos +1):
                 photo = photo_name(folder,numero)
-                quantidade = count_class(photo,class_name)
+                quantidade = count_class(photo,class_name,nivel_confianca)
                 total_encontrado += quantidade
         #verificar se a classe apareceu
                 if quantidade >0:
                     fotos_com_classe += 1
         #calcular a porcetagem
-                porcentagem = (fotos_com_classe/total_fotos) * 100
+                porcentagem = (fotos_com_classe/total_fotos) * 100 if total_fotos > 0 else 0
         #resultados
             print(f"Total de fotos: {total_fotos}")
             print(f"Fotos com {class_name}: {fotos_com_classe}")
