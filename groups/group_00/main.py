@@ -243,7 +243,7 @@ def main():
                 if quantidade >0:
                     fotos_com_classe += 1
         #calcular a porcetagem
-                porcentagem = (fotos_com_classe/total_fotos) * 100 if total_fotos > 0 else 0
+                porcentagem = (fotos_com_classe/total_fotos) * 100 
         #resultados
             print(f"Total de fotos: {total_fotos}")
             print(f"Fotos com {class_name}: {fotos_com_classe}")
