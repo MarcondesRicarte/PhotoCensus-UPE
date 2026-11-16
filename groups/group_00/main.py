@@ -29,7 +29,13 @@ def main():
         print(" 7 - Gráfico de barras. ")
         print(" 0 - Sair. ")
         
-        option = int(input("Escolha uma opção: "))
+        option = input("Escolha uma opção: ")
+        if option.isdigit():
+            option = int(option)
+        
+        else:
+            print("Opção inválida. Digite um número inteiro entre 0 e 7.")
+            continue
         
         if option == 0:
             print("Programa encerrado!")
@@ -39,7 +45,14 @@ def main():
             # O usuario define o nível de confiança para um valor entre 0 e 1.
             print("Você escolheu configurar confianca")
             print("-" *30)
-            confianca = float(input(" Digite o nível de confiança: "))
+            confianca = input(" Digite o nível de confiança: ")
+
+            if confianca.isdigit():
+                confianca = float(confianca)
+                
+            else:
+                confianca = float(input("Por favor. Digite um número entre 0 e 1."))
+
             while confianca < 0 or confianca > 1:
                 print("Confiança inválida!")
                 confianca = float(input("Digite novamente: "))
@@ -130,7 +143,7 @@ def main():
             # armazenei o resultado na variavel quantity
             quantity = count_class(photo, class_name, nivel_confianca)
 
-            print("Quantidade encontrada:", quantity)
+            print(f"Quantidade encontrada: {quantity}")
  
         elif option == 4:
             print("Você escolheu relatório da pasta")
