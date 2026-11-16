@@ -1,5 +1,5 @@
 """
-PhotoCensus - Group 00 (TEMPLATE)
+PhotoCensus - Group 01 (TEMPLATE)
 
 Copy this folder to /groups/group_XX/ (XX = your group number)
 and write your project here. Do not modify anything in /kit.
