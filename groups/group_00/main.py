@@ -129,7 +129,7 @@ def main():
             # choose folder  
             # Escolhendo a pasta validada com um while
             show_folders()
-            folder = input('Digite o nome da pasta:').strip()
+            folder = input('Digite o nome da pasta: ').strip()
             while not folder_exists(folder):
                 print('Pasta inválida! Tente novamente.')
                 folder = input('Digite o nome da pasta:').strip()
