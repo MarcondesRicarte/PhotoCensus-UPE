@@ -23,7 +23,8 @@ def choose_folder():
     show_folders()
         
     folder = input("Escolha uma pasta: ")
-    
+
+    #repete se a entrada estiver vazia ou nao existir
     while not folder_exists(folder): 
         print(MSG_INVALID)
         show_folders()
@@ -39,7 +40,7 @@ def choose_photo(folder):
             number = int(input(f"Escolha uma foto (de 1 a {total}): "))
             if 1 <= number <= total:
                 break
-            print(MSG_INVALID) #o que esse print faz aqui???
+            print(MSG_INVALID)
         except ValueError:
             print(MSG_INVALID)
 
@@ -221,12 +222,9 @@ def analyze_folder(confidence):
 
 
 
-
-
 def main():
     print("PhotoCensus - Group 05")
     show_folders()
-    # Your menu (while loop) starts here...
 
     while True:
         option = show_menu(confidence)
