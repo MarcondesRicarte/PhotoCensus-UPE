@@ -6,13 +6,16 @@ sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *
 
 # A partir da linha 8 à linha 48 produzi o que seriam as funções de validação e a formatação auxiliar do projeto
-def get_valid_folder(): #opção 2
+def get_valid_folder(): # opção 2
     show_folders()
-    folder = input("Digite o nome da pasta: ").strip()
-    while not folder_exists(folder):
-        print(f"Erro: A pasta '{folder}' não existe. Tente novamente.")
+    while True:
         folder = input("Digite o nome da pasta: ").strip()
-    return folder
+        if folder == "":
+            print("Erro: O nome da pasta não pode estar em branco. Tente novamente.")
+        elif not folder_exists(folder):
+            print(f"Erro: A pasta '{folder}' não existe. Tente novamente.")
+        else:
+            return folder
 
 def get_valid_photo_number(folder): #opção 2
     total = total_photos(folder)
@@ -38,10 +41,17 @@ def get_valid_confidence(): #opção 1
 def get_valid_class_name(): #opção3
     show_classes()
     class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
-    while class_name == "":
-        print("Erro: O nome da classe não pode estar em branco.")
-        class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
-    return class_name
+    valid_classes = ",airplane,apple,backpack,banana,baseball bat,baseball glove,bear,bed,bench,bicycle,bird,boat,book,bottle,bowl,broccoli,bus,cake,car,carrot,cat,cell phone,chair,clock,couch,cow,cup,dining table,dog,donut,elephant,fire hydrant,fork,frisbee,giraffe,hair drier,handbag,horse,hot dog,keyboard,kite,knife,laptop,microwave,motorcycle,mouse,orange,oven,parking meter,person,pizza,potted plant,refrigerator,remote,sandwich,scissors,sheep,sink,skateboard,skis,snowboard,spoon,sports ball,stop sign,suitcase,surfboard,teddy bear,tennis racket,tie,toaster,toilet,toothbrush,traffic light,train,truck,tv,umbrella,vase,wine glass,zebra,"
+    
+    while True:
+        if class_name == "":
+            print("Erro: O nome da classe não pode estar em branco.")
+            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
+        elif f",{class_name}," not in valid_classes:
+            print("Erro: O nome da classe não está listada. Tente novamente.")
+            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
+        else:
+            return class_name
 
 def get_short_photo_name(photo_path):
     filename = os.path.basename(photo_path)
@@ -59,7 +69,7 @@ def analyze_photo(min_conf):  # 1. Entrada e caminho: Valida a pasta/número e m
     
     print("\n--- Análise da Foto ---") # 3. Saída formatada: :.0f serve para arredondar a porcentagem sem casas decimais
     print(f"Caminho: {path}")
-    print(f"Total de objetos (conf >= {min_conf}): {total_objs}")
+    print(f"Total de objetos (conf = {min_conf}): {total_objs}")
     print(f"Objeto principal: {top_obj}")
     print(f"Maior confiança: {top_conf_percent:.0f}%")
 
@@ -73,7 +83,7 @@ def count_class_in_photo(min_conf): # 1. Entrada: Vai validar a pasta, número d
     short_name = get_short_photo_name(path)
 
 # 3. Saída: Vai informar quantos itens da classe existem naquela imagem específica
-    print(f"\nResultado: Foram encontrados {amount} objeto(s) da classe '{target_class}' em '{short_name}' (conf >= {min_conf}).")
+    print(f"\nResultado: Foram encontrados {amount} objeto(s) da classe '{target_class}' em '{short_name}' (conf = {min_conf}).")
 
 def folder_report(min_conf): # 1. Preparação: Serve para descobrir quantas fotos existem na pasta para definir o limite do 'for'
     folder = get_valid_folder()
@@ -82,7 +92,7 @@ def folder_report(min_conf): # 1. Preparação: Serve para descobrir quantas fot
     grand_total = 0 # Acumulador (soma de objetos) 
     empty_photos = 0 # Contador (fotos zeradas)
 
-    print(f"\n--- Relatório da Pasta: {folder} (conf >= {min_conf}) ---") # 2. Varredura com for: Percorre da foto 1 até total_pics (inclusive, por isso + 1)
+    print(f"\n--- Relatório da Pasta: {folder} (conf = {min_conf}) ---") # 2. Varredura com for: Percorre da foto 1 até total_pics (inclusive, por isso + 1)
     for i in range(1, total_pics + 1): 
         path = photo_name(folder, i)
         objs = count_objects(path, min_conf)
@@ -124,7 +134,7 @@ def fullest_and_emptiest_photos(min_conf): # 1. Preparação: Vai validar a past
         min_objs = objs
         min_photo = path
 
-    print(f"\n--- Extremos da pasta '{folder}' (conf >= {min_conf}) ---")
+    print(f"\n--- Extremos da pasta '{folder}' (conf = {min_conf}) ---")
     print(f"Foto mais cheia: {get_short_photo_name(max_photo)} com {max_objs} objeto(s)")
     print(f"Foto mais vazia: {get_short_photo_name(min_photo)} com {min_objs} objeto(s)")
 
@@ -147,7 +157,7 @@ def search_class_in_folder(min_conf): # 1. Entrada e variáveis de controle
 # 3. Porcentagem de presença: (fotos onde apareceu / total de fotos) * 100
     presence_percent = (photos_with_class / total_pics ) * 100 if total_pics > 0 else 0.0
 
-    print(f"\n--- Busca da classe '{target_class}' em '{folder}' (conf >= {min_conf}) ---")
+    print(f"\n--- Busca da classe '{target_class}' em '{folder}' (conf = {min_conf}) ---")
     print(f"Aparece em: {photos_with_class} de {total_pics} fotos ({presence_percent:.1f}%)")
     print(f"Quantidade total encontrada: {total_found}")
 
@@ -155,7 +165,7 @@ def folder_bar_chart(min_conf): # 1. Preparação: Valida a pasta e pega a quant
     folder = get_valid_folder()
     total_pics = total_photos(folder)
 
-    print(f"\n--- Gráfico de Objetos: {folder} (conf >= {min_conf}) ---")
+    print(f"\n--- Gráfico de Objetos: {folder} (conf = {min_conf}) ---")
     for i in range(1, total_pics + 1): # 2. Laço externo (Fotos): Percorre cada imagem da pasta
         path = photo_name(folder, i)
         objs = count_objects(path, min_conf)
@@ -163,7 +173,7 @@ def folder_bar_chart(min_conf): # 1. Preparação: Valida a pasta e pega a quant
 
         bar = "" # 3. Laço interno (Barras): Requisito para desenhar a barra de '#' proporcional à quantidade de objetos encontrados
         for _ in range(objs):
-            bar += "#"
+            bar += "█"
 
         print(f"{label:<15} | {bar} ({objs})")
 
