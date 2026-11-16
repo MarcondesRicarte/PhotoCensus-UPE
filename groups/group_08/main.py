@@ -5,13 +5,8 @@ GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *
 
-
-def main():
-    print("PhotoCensus - Group 08")
-    show_folders()
-
-# A partir da linha 14 à linha 53 produzi o que seriam as funções de validação e a formatação auxiliar do projeto
-def get_valid_folder():
+# A partir da linha 8 à linha 48 produzi o que seriam as funções de validação e a formatação auxiliar do projeto
+def get_valid_folder(): #opção 2
     show_folders()
     folder = input("Digite o nome da pasta: ").strip()
     while not folder_exists(folder):
@@ -19,7 +14,7 @@ def get_valid_folder():
         folder = input("Digite o nome da pasta: ").strip()
     return folder
 
-def get_valid_photo_number(folder):
+def get_valid_photo_number(folder): #opção 2
     total = total_photos(folder)
     while True:
         entrada = input(f"Digite o número da foto (1 a {total}): ").strip()
@@ -29,7 +24,7 @@ def get_valid_photo_number(folder):
                 return number
         print(f"Erro: Digite um número inteiro entre 1 e {total}.")
 
-def get_valid_confidence():
+def get_valid_confidence(): #opção 1
     while True:
         entrada = input("Digite a confiança mínima (0.0 a 1.0): ")
         try:
@@ -40,7 +35,7 @@ def get_valid_confidence():
         except ValueError:
             print("Erro: Digite um número decimal válido (Ex: 0.5).")
 
-def get_valid_class_name():
+def get_valid_class_name(): #opção3
     show_classes()
     class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
     while class_name == "":
@@ -52,7 +47,7 @@ def get_short_photo_name(photo_path):
     filename = os.path.basename(photo_path)
     return filename.replace(".jpg", "").replace(".jpeg", "").replace(".png", "")
 
-# A partir da linha 56 à 171, fui programando as funções da operação do programa (que vai da opção 2 a 7)
+# A partir da linha 50 à 165, fui programando as funções da operação do programa (que vai da opção 2 a 7)
 def analyze_photo(min_conf):  # 1. Entrada e caminho: Valida a pasta/número e monta o caminho real da imagem
     folder = get_valid_folder()
     number = get_valid_photo_number(folder)
@@ -117,9 +112,9 @@ def fullest_and_emptiest_photos(min_conf): # 1. Preparação: Vai validar a past
     min_photo = first_path
     min_objs = first_count
 
-    for i in range(2, total_pics + 1): 3. # Comparação manual: Como a foto 1 já foi lida, o 'for' começa na foto 2
-    path = photo_name(folder, i)
-    objs = count_objects(path, min_conf)
+    for i in range(2, total_pics + 1): # Comparação manual: Como a foto 1 já foi lida, o 'for' começa na foto 2
+        path = photo_name(folder, i)
+        objs = count_objects(path, min_conf)
 
     if objs > max_objs: # Se encontrar uma foto com MAIS objetos que o recorde atual, substitui
         max_objs = objs
@@ -217,7 +212,7 @@ def main():
             folder_bar_chart(min_confidence)
 
         elif option == "0":
-            print("Encerrando PhotoCensus - Group 0...")
+            print("Encerrando PhotoCensus...")
             break
 
         else:
