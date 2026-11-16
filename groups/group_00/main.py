@@ -21,7 +21,7 @@ def main():
     while True:
         print("=== PHOTOS CENSUS ===")
         print(" 1 - Configurar confiança.")
-        print(" 2 - Anasilar uma foto.")
+        print(" 2 - Analisar uma foto.")
         print(" 3 - Contar uma classe.")
         print(" 4 - Relatório da pasta.")
         print(" 5 - Foto mais cheia e mais vazia. ")
