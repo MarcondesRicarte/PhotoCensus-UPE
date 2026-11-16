@@ -155,11 +155,7 @@ def main():
 
             # average of objects per photo
             # média de objetos por foto 
-            if total > 0:
-                average = total_objects / total
-            else:
-                average = 0
-                print('A pasta não tem nenhuma foto.')
+            avarage = total_objects / total
                 
             print('-' * 30)
             print('Total geral de objetos:', total_objects)
