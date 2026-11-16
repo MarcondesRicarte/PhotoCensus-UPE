@@ -145,19 +145,22 @@ def main():
 
             # examination of the photos in the folders
             # examinação das fotos nas pastas ( iniciando em 1)
-            number = 1 
-            while number <= total:
+            for number in range(1, total + 1):
                 photo = photo_name(folder, number)
                 amount = count_objects(photo, nivel_confianca)
                 print(f'Foto {number}: {amount} objeto(s)')
                 total_objects += amount 
                 if amount == 0:
-                    empty_photos = empty_photos + 1
-                number += 1
+                    empty_photos += 1
+
             # average of objects per photo
             # média de objetos por foto 
-            average = total_objects / total
-
+            if total > 0:
+                average = total_objects / total
+            else:
+                average = 0
+                print('A pasta não tem nenhuma foto.')
+                
             print('-' * 30)
             print('Total geral de objetos:', total_objects)
             print(f'Média de objetos por foto: {average:.2f}')
