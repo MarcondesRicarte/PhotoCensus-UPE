@@ -46,15 +46,17 @@ def get_valid_class_name(): #opção 3 e 6
     while True:
         if class_name == "":
             print("Erro: O nome da classe não pode estar em branco.")
-        elif f",{class_name}," not in valid_classes:
+            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
+        elif "," in class_name or f",{class_name}," not in valid_classes:
             print("Erro: O nome da classe não está listada. Tente novamente.")
+            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
         else:
             return class_name
 
 def get_short_photo_name(photo_path):
     filename = os.path.basename(photo_path)
     return filename.replace(".jpg", "").replace(".jpeg", "").replace(".png", "")
-
+    
 # A partir daqui, fui programando as funções da operação do programa (que vai da opção 2 a 7)
 def analyze_photo(min_conf):  # 1. Entrada e caminho: Valida a pasta/número e monta o caminho real da imagem
     folder = get_valid_folder()
@@ -113,6 +115,10 @@ def folder_report(min_conf): # 1. Preparação: Serve para descobrir quantas fot
 def fullest_and_emptiest_photos(min_conf): # 1. Preparação: Vai validar a pasta e obter o total de imagens
     folder = get_valid_folder()
     total_pics = total_photos(folder)
+
+    if total_pics <= 0:
+        print(f"\nAviso: A pasta '{folder}' não possui fotos.")
+        return
 
     first_path = photo_name(folder, 1) # 2. Inicialização: Começa assumindo que a primeira foto é a mais cheia e a mais vazia
     first_count = count_objects(first_path, min_conf)
