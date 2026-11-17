@@ -180,7 +180,7 @@ def folder_bar_chart(min_conf): # 1. Preparação: Valida a pasta e pega a quant
 
         bar = "" # 3. Laço interno (Barras): Requisito para desenhar a barra de '#' proporcional à quantidade de objetos encontrados
         for _ in range(objs):
-            bar += "#"
+            bar += "█"
 
         print(f"{label:<15} | {bar} ({objs})")
 
