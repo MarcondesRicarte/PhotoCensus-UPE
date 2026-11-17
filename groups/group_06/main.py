@@ -87,7 +87,7 @@ def ask_photo_number(folder):
     print(f"Total photos: {total}")
 
     # input() devolve sempre TEXTO (str), mesmo que o usuário digite 3
-    photo_analisys = input(f"Photo number (1 to {total}): ").strip()
+    photo_analysis = input(f"Photo number (1 to {total}): ").strip()
 
     # .isdigit() = método de texto: devolve True se o texto tiver SÓ números (0 a 9)
     #   "3".isdigit()   -> True
@@ -98,11 +98,11 @@ def ask_photo_number(folder):
     # A condição do while é lida da esquerda para a direita:
     # O int() só é executado se o texto já passou pelo isdigit() .
 
-    while not photo_analisys.isdigit() or int(photo_analisys) < 1 or int(photo_analisys) > total:
+    while not photo_analysis.isdigit() or int(photo_analysis) < 1 or int(photo_analysis) > total:
         print("Invalid number! Try again.")
-        photo_analisys = input(f"Photo number (1 to {total}): ").strip()
+        photo_analysis = input(f"Photo number (1 to {total}): ").strip()
 
-    return int(photo_analisys)  # converte o texto "3" no número 3
+    return int(photo_analysis)  # converte o texto "3" no número 3
 
 
 def ask_confidence():
