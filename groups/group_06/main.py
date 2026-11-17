@@ -13,11 +13,6 @@ import sys
 # em algumas pastas conhecidas (a lista chamada sys.path), e a pasta "kit" NÃO está nela.
 # Sem as linhas abaixo dá erro: ModuleNotFoundError: No module named 'black_box'.
 # Elas descobrem onde está este arquivo e ensinam ao Python o caminho da pasta "kit".
-#
-# Estrutura do projeto (a "raiz" é a pasta PhotoCensus-UPE):
-#   PhotoCensus-UPE/
-#       kit/black_box.py        <- está aqui
-#       groups/group_06/main.py <- nós estamos aqui
 # ---------------------------------------------------------------
 
 # Permite que este arquivo encontre o black_box.py na pasta /kit
@@ -32,17 +27,11 @@ GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
 # Então GROUP_DIR + ".." + ".." + "kit" aponta para a pasta kit, na raiz do projeto:
 #   .../groups/group_06/../../kit   é o mesmo que   .../kit
 # sys.path.append(...) = acrescenta essa pasta na lista onde o Python procura arquivos
-# Por que não escrever só "kit"? Porque um caminho assim depende de onde o terminal está aberto.
 # Usando o __file__, o caminho é calculado a partir do próprio arquivo e funciona de qualquer pasta.
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 
 # from black_box import * = traz todas as funções do black_box.py (folder_exists, count_objects...)
-# "# noqa: E402,F401,F403" = etiqueta para programas que verificam o código (como o flake8),
 #   quer dizer "não avise sobre estes itens nesta linha":
-#   E402 = import fora do começo do arquivo (aqui vem depois do sys.path.append)
-#   F403 = uso de "from ... import *"
-#   F401 = import que parece não ser usado
-#   O Python ignora esse comentário: ele NÃO muda como o programa roda (veio do modelo do professor).
 from black_box import *  # noqa: E402,F401,F403
 
 
@@ -98,33 +87,28 @@ def ask_photo_number(folder):
     print(f"Total photos: {total}")
 
     # input() devolve sempre TEXTO (str), mesmo que o usuário digite 3
-    raw_input = input(f"Photo number (1 to {total}): ").strip()
+    photo_analisys = input(f"Photo number (1 to {total}): ").strip()
 
     # .isdigit() = método de texto: devolve True se o texto tiver SÓ números (0 a 9)
     #   "3".isdigit()   -> True
     #   "abc".isdigit() -> False  (tem letra)
-    #   "-1".isdigit()  -> False  (o sinal de menos não é número)
-    #   "2.5".isdigit() -> False  (o ponto não é número)
     #   "".isdigit()    -> False  (vazio)
     # Por que testar antes? Porque int("abc") dá erro e fecha o programa.
     #
     # A condição do while é lida da esquerda para a direita:
-    #   1) not raw_input.isdigit()  -> não é número? então é inválido (o "or" já para aqui)
-    #   2) int(raw_input) < 1       -> é número, mas menor que 1
-    #   3) int(raw_input) > total   -> é número, mas maior que o total de fotos
-    # Com "or", basta UMA condição ser verdadeira para repetir a pergunta.
-    # O int() só é executado se o texto já passou pelo isdigit(), por isso nunca dá erro.
-    while not raw_input.isdigit() or int(raw_input) < 1 or int(raw_input) > total:
-        print("Invalid number! Try again.")
-        raw_input = input(f"Photo number (1 to {total}): ").strip()
+    # O int() só é executado se o texto já passou pelo isdigit() .
 
-    return int(raw_input)  # converte o texto "3" no número 3
+    while not photo_analisys.isdigit() or int(photo_analisys) < 1 or int(photo_analisys) > total:
+        print("Invalid number! Try again.")
+        photo_analisys = input(f"Photo number (1 to {total}): ").strip()
+
+    return int(photo_analisys)  # converte o texto "3" no número 3
 
 
 def ask_confidence():
     # Pergunta até o valor ser um número entre 0 e 1
 
-    raw_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
+    confidence_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
     # . replace("," , ".") = aceita "0,8" e "0.8" (troca a vírgula por ponto)
 
     # O texto pode ter um ponto decimal ("0.8"), mas para o isdigit() o ponto NÃO é número.
@@ -137,14 +121,15 @@ def ask_confidence():
     #
     # A condição do while é lida da esquerda para a direita:
     #   1) not ...isdigit()    -> não é número? então é inválido (o "or" já para aqui)
-    #   2) float(raw_val) > 1  -> é número, mas maior que 1
+    #   2) float(confidence_val) > 1  -> é número, mas maior que 1
     # Não precisa testar "< 0": o sinal de menos já é recusado pelo isdigit().
     # O float() só é executado se o texto já passou pelo isdigit(), por isso nunca dá erro.
-    while not raw_val.replace(".", "", 1).isdigit() or float(raw_val) > 1:
-        print("Invalid value! Type a number between 0 and 1.")
-        raw_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
 
-    return float(raw_val)  # agora é seguro: converte o texto "0.8" no número 0.8
+    while not confidence_val.replace(".", "", 1).isdigit() or float(confidence_val) > 1:
+        print("Invalid value! Type a number between 0 and 1.")
+        confidence_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
+
+    return float(confidence_val)  # agora é seguro: converte o texto "0.8" no número 0.8
 
 
 def main():
