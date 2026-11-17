@@ -161,7 +161,7 @@ def main():
                 
             print('-' * 30)
             print('Total geral de objetos:', total_objects)
-            print(f'Média de objetos por foto: {average:.2f}')
+            print(f'Média de objetos por foto: {avarage:.2f}')
             print('Fotos sem nenhum objeto:', empty_photos)
             print('-' * 30)
             
@@ -249,7 +249,7 @@ def main():
             print(f"Total de fotos: {total_fotos}")
             print(f"Fotos com {class_name}: {fotos_com_classe}")
             print(f"Total de objetos encontrados: {total_encontrado}")
-            print(f"Porcentagem: {porcentagem::.2f} %")
+            print(f"Porcentagem: {porcentagem:.2f} %")
             print('-'*30)
 
         elif option == 7:
