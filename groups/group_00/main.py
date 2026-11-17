@@ -53,12 +53,11 @@ def main():
             print("Você escolheu configurar confianca")
             print("-" *30)
             confianca = input(" Digite o nível de confiança: ")
-
-            if confianca.isdigit():
+     
+            try:
                 confianca = float(confianca)
-                
-            else:
-                confianca = float(input("Por favor. Digite um número entre 0 e 1."))
+            except ValueError:
+                    confianca = float(input("Por favor. Digite um número entre 0 e 1: "))
 
             while confianca < 0 or confianca > 1:
                 print("Confiança inválida!")
@@ -68,6 +67,7 @@ def main():
         elif option == 2:
             print("Você escolheu analisar uma foto")
             print("-" * 30)
+            show_folders()
             pasta = input("Digite o nome da pasta: ")
             
             # Verificando se a pasta informada existe atraves do folder exists
@@ -95,6 +95,7 @@ def main():
             print(f"Quantidade de objetos: {quantidade}")
             print(f"Objeto principal: {principal}")
             print(f"Maior confiança: {porcentagem} %")
+            print('-'*30)
             
 
         elif option == 3:
@@ -121,6 +122,7 @@ def main():
             quantity = count_class(photo, class_name, nivel_confianca)
 
             print(f"Quantidade encontrada: {quantity}")
+            print('-'*30)
  
         elif option == 4:
             print("Você escolheu relatório da pasta")
@@ -242,16 +244,18 @@ def main():
                 if quantidade >0:
                     fotos_com_classe += 1
         #calcular a porcetagem
-                porcentagem = (fotos_com_classe/total_fotos) * 100 
+            porcentagem = (fotos_com_classe/total_fotos) * 100 
         #resultados
             print(f"Total de fotos: {total_fotos}")
             print(f"Fotos com {class_name}: {fotos_com_classe}")
             print(f"Total de objetos encontrados: {total_encontrado}")
-            print(f"Porcentagem: {porcentagem} %")
+            print(f"Porcentagem: {porcentagem::.2f} %")
+            print('-'*30)
 
         elif option == 7:
             print("Você escolheu gráfico de barras")
             print("-"*30)
+            show_folders()
         #recebe a informação    
             folder = input("Digite o nome da pasta: ")
             while not folder_exists(folder):
@@ -267,7 +271,7 @@ def main():
             #imprimi um # para cada objeto
                 for i in range(quantidade):
                     print("#", end=" ")
-                print(f"A quantidade de objetos foi: {quantidade}")
+                print(f"A quantidade de objetos foi ({quantidade})")
             print("-"* 30)
 
         else:
