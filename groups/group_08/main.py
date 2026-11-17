@@ -5,8 +5,8 @@ GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *
 
-# A partir da linha 8 à linha 48 produzi o que seriam as funções de validação e a formatação auxiliar do projeto
-def get_valid_folder(): # opção 2
+# A partir dessa parte, produzi o que seriam as funções de validação e a formatação auxiliar do projeto
+def get_valid_folder(): # opção 2 à 7
     show_folders()
     while True:
         folder = input("Digite o nome da pasta: ").strip()
@@ -17,7 +17,7 @@ def get_valid_folder(): # opção 2
         else:
             return folder
 
-def get_valid_photo_number(folder): #opção 2
+def get_valid_photo_number(folder): #opção 2 e 3 
     total = total_photos(folder)
     while True:
         entrada = input(f"Digite o número da foto (1 a {total}): ").strip()
@@ -38,7 +38,7 @@ def get_valid_confidence(): #opção 1
         except ValueError:
             print("Erro: Digite um número decimal válido (Ex: 0.5).")
 
-def get_valid_class_name(): #opção3
+def get_valid_class_name(): #opção 3 e 6
     show_classes()
     class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
     valid_classes = ",airplane,apple,backpack,banana,baseball bat,baseball glove,bear,bed,bench,bicycle,bird,boat,book,bottle,bowl,broccoli,bus,cake,car,carrot,cat,cell phone,chair,clock,couch,cow,cup,dining table,dog,donut,elephant,fire hydrant,fork,frisbee,giraffe,hair drier,handbag,horse,hot dog,keyboard,kite,knife,laptop,microwave,motorcycle,mouse,orange,oven,parking meter,person,pizza,potted plant,refrigerator,remote,sandwich,scissors,sheep,sink,skateboard,skis,snowboard,spoon,sports ball,stop sign,suitcase,surfboard,teddy bear,tennis racket,tie,toaster,toilet,toothbrush,traffic light,train,truck,tv,umbrella,vase,wine glass,zebra,"
@@ -46,10 +46,8 @@ def get_valid_class_name(): #opção3
     while True:
         if class_name == "":
             print("Erro: O nome da classe não pode estar em branco.")
-            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
         elif f",{class_name}," not in valid_classes:
             print("Erro: O nome da classe não está listada. Tente novamente.")
-            class_name = input("Digite o nome da classe (ex: car, person): ").strip().lower()
         else:
             return class_name
 
@@ -57,7 +55,7 @@ def get_short_photo_name(photo_path):
     filename = os.path.basename(photo_path)
     return filename.replace(".jpg", "").replace(".jpeg", "").replace(".png", "")
 
-# A partir da linha 50 à 165, fui programando as funções da operação do programa (que vai da opção 2 a 7)
+# A partir daqui, fui programando as funções da operação do programa (que vai da opção 2 a 7)
 def analyze_photo(min_conf):  # 1. Entrada e caminho: Valida a pasta/número e monta o caminho real da imagem
     folder = get_valid_folder()
     number = get_valid_photo_number(folder)
@@ -70,8 +68,11 @@ def analyze_photo(min_conf):  # 1. Entrada e caminho: Valida a pasta/número e m
     print("\n--- Análise da Foto ---") # 3. Saída formatada: :.0f serve para arredondar a porcentagem sem casas decimais
     print(f"Caminho: {path}")
     print(f"Total de objetos (conf = {min_conf}): {total_objs}")
-    print(f"Objeto principal: {top_obj}")
-    print(f"Maior confiança: {top_conf_percent:.0f}%")
+    if top_obj == "":
+        print("Objeto principal: Nenhum objeto detectado.")
+    else:
+        print(f"Objeto principal: {top_obj}")
+        print(f"Maior confiança: {top_conf_percent:.0f}%")
 
 def count_class_in_photo(min_conf): # 1. Entrada: Vai validar a pasta, número da foto e nome da classe desejada!
     folder = get_valid_folder()
@@ -173,7 +174,7 @@ def folder_bar_chart(min_conf): # 1. Preparação: Valida a pasta e pega a quant
 
         bar = "" # 3. Laço interno (Barras): Requisito para desenhar a barra de '#' proporcional à quantidade de objetos encontrados
         for _ in range(objs):
-            bar += "█"
+            bar += "#"
 
         print(f"{label:<15} | {bar} ({objs})")
 
@@ -188,7 +189,7 @@ def show_menu(min_conf):
     print("4- Relatório da pasta")
     print("5- Foto mais cheia e mais vazia da pasta")
     print("6- Procurar uma classe na pasta")
-    print("7- Gráfico de objetos em foto na pasta")
+    print("7- Gráfico de objetos por foto na pasta")
     print("0- Sair")
     print("=" * 45)
 
