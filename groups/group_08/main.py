@@ -126,13 +126,13 @@ def fullest_and_emptiest_photos(min_conf): # 1. Preparação: Vai validar a past
         path = photo_name(folder, i)
         objs = count_objects(path, min_conf)
 
-    if objs > max_objs: # Se encontrar uma foto com MAIS objetos que o recorde atual, substitui
-        max_objs = objs
-        max_photo = path
+        if objs > max_objs: # Se encontrar uma foto com MAIS objetos que o recorde atual, substitui
+            max_objs = objs
+            max_photo = path
 
-    if objs < min_objs: # Se encontrar uma foto com MENOS objetos que o recorde atual, substitui
-        min_objs = objs
-        min_photo = path
+        if objs < min_objs: # Se encontrar uma foto com MENOS objetos que o recorde atual, substitui
+            min_objs = objs
+            min_photo = path
 
     print(f"\n--- Extremos da pasta '{folder}' (conf = {min_conf}) ---")
     print(f"Foto mais cheia: {get_short_photo_name(max_photo)} com {max_objs} objeto(s)")
