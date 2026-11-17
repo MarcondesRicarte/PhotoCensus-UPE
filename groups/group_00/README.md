@@ -1,8 +1,8 @@
-# Group 00 (template)
+# Group 01 (template)
 
 Copy this folder to `groups/group_XX/` and replace this file with your group's information:
 
-- **Group:** XX
-- **Members:** Name 1, Name 2, Name 3
-- **Monitor:** Name
-- **How to run:** `python groups/group_XX/main.py` (from the repository root)
+- **Group:** 01
+- **Members:** Bruno Rafael, Francisco André, Pedro Henrique
+- **Monitor:** Lucas Terêncio
+- **How to run:** `python groups/group_01/main.py` (from the repository root)
