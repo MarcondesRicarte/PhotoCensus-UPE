@@ -1,6 +1,6 @@
 # Group 01 (template)
 
-Copy this folder to `groups/group_XX/` and replace this file with your group's information:
+Copy this folder to `groups/group_01/` and replace this file with your group's information:
 
 - **Group:** 01
 - **Members:** Bruno Rafael, Francisco André, Pedro Henrique
