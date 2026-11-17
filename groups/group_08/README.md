@@ -1,0 +1,4 @@
+- **Group:** 08
+- **Members:** Miguel Gomes, Higor Felipe, Matheus Bezerra
+- **Monitor:** Lucas Lima
+- **How to run:** `python groups/group_08/main.py` (from the repository root)
