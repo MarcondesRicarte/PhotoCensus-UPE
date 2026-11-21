@@ -52,16 +52,19 @@ def main():
         elif option == 1:
             print("Você escolheu configurar confianca")
             print("-" *30)
-            confianca = input(" Digite o nível de confiança: ")
-     
-            try:
-                confianca = float(confianca)
-            except ValueError:
-                    confianca = float(input("Por favor. Digite um número entre 0 e 1: "))
 
-            while confianca < 0 or confianca > 1:
-                print("Confiança inválida!")
-                confianca = float(input("Digite novamente: "))
+            while True:
+                try:
+                    confianca = float(input('Digite o nível de confiança:  '))
+                    if confianca < 0 or confianca > 1:
+                        print("Confiança inválida! Digite um número entre 0 e 1")
+                        continue
+                
+                    break
+
+                except ValueError:
+                    print("Entrada inválida! Digite apenas números.")
+           
             nivel_confianca = confianca
 
         elif option == 2:
@@ -101,6 +104,8 @@ def main():
         elif option == 3:
             print("Você escolheu contar uma classe")
             print("-" * 30)
+            show_folders()
+            classes.json()
             
             folder = input("Digite o nome da pasta: ")
             
@@ -224,6 +229,8 @@ def main():
         elif option == 6:
             print("Você escolheu procurar uma classe")
             print("-" * 30)
+            show_folders()
+            classes.json()
         #Receber as informaçoes
             folder = input("Digite o nome da pasta: ")  
             while not folder_exists(folder):
