@@ -105,7 +105,9 @@ def main():
             print("Você escolheu contar uma classe")
             print("-" * 30)
             show_folders()
-            classes.json()
+            print('='*70)
+            show_classes()
+            print('='*70)
             
             folder = input("Digite o nome da pasta: ")
             
@@ -230,7 +232,9 @@ def main():
             print("Você escolheu procurar uma classe")
             print("-" * 30)
             show_folders()
-            classes.json()
+            print('='*70)
+            show_classes()
+            print('='*70)  
         #Receber as informaçoes
             folder = input("Digite o nome da pasta: ")  
             while not folder_exists(folder):
