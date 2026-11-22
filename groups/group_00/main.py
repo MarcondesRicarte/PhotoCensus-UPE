@@ -13,6 +13,65 @@ sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *  # noqa: E402,F401,F403
 
 
+def load_collection():
+    resultados = {}
+
+    folders = list_folders()
+
+    total_photos = 0
+    total_detections = 0
+
+    for folder in folders:
+        photos = list_photos(folder)
+
+        for photo in photos:
+            detections = detect(photo)
+
+            resultados[photo] = detections
+
+            total_photos += 1
+            total_detections += len(detections)
+
+    print("=== RESUMO DO ACERVO ===")
+    print("Pastas:", len(folders))
+    print("Fotos:", total_photos)
+    print("Detecções:", total_detections)
+
+    return resultados
+
+def filter_detections(detections, min_confidence):
+    filtered = []
+    for class_name, confidence in detections:
+        if confidence >= min_confidence:
+            filtered.append((class_name, confidence))
+    return filtered
+
+
+def build_inventory(resultados, photos, min_confidence):
+    inventory = {}
+    for photo in photos:
+        detections = filter_detections(resultados[photo], min_confidence)
+        for class_name, confidence in detections:
+            if class_name in inventory:
+                inventory[class_name] += 1
+            else:
+                inventory[class_name] = 1
+    return inventory
+
+
+
+def show_inventory(inventory):
+    if len(inventory) == 0:
+        print("Nenhum objeto encontrado.")
+        return
+    for class_name, amount in inventory.items():
+        print(f"{class_name}: {amount}")
+
+
+
+
+
+
 def main():
     nivel_confianca = 0.5
     print("PhotoCensus - Group 01")
@@ -285,6 +344,60 @@ def main():
                 print(f"A quantidade de objetos foi ({quantidade})")
             print("-"* 30)
 
+
+
+        elif option == 8:
+             acervo = load_collection()
+
+        elif option == 9:
+            show_folders()
+            folder = input("Digite o nome da pasta: ")
+            while not folder_exists(folder):
+                print("Pasta inválida")
+                folder = input("Digite o nome da pasta novamente:  ")
+
+            number = ler_inteiro("Digite o número da foto: ")
+            total = total_photos(folder)
+            # Validando o número digitado 
+            while number < 1 or number > total:
+                print("Número inválido!")
+                number = int(input("Digite novamente: "))
+
+
+
+            foto = photo_name(folder, number)
+            deteccoes = detect(foto)
+            filtradas = filter_detections(deteccoes, nivel_confianca)
+
+            print(f"Detecções em {foto} (confiança >= {nivel_confianca}):")
+            if not filtradas:
+                print("Nenhum objeto encontrado com esse nível de confiança.")
+            else:
+                for classe, confianca in filtradas:
+                    print(f"- {classe}: {confianca:.2f}")
+
+
+
+            
+        elif option == 10:
+            choice = input("Inventário do acervo inteiro (A) ou de uma pasta (P)? ").strip().upper()
+            while choice != "A" and choice != "P":
+                choice = input("Opção inválida. Digite A ou P: ").strip().upper()
+
+            if choice == "A":
+                photos = list(resultados.keys())
+
+            else:
+                show_folders()
+                folder = input("Pasta: ").strip()
+                
+                while not folder_exists(folder):
+                    folder = input("Pasta inválida. Digite de novo: ").strip()
+                photos = list_photos(folder)
+
+            inventory = build_inventory(resultados, photos, nivel_confianca)
+            show_inventory(inventory)
+        
         else:
             print("Opção inválida!")
 
