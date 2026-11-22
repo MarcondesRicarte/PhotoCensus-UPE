@@ -1,19 +1,19 @@
 import os
-import sys
+import sys 
 
-GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
+GROUP_DIR = os.path.dirname(os.path.abspath(__file__)) 
+sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit")) 
 from black_box import *
 
 
-def ask_folder():
+def ask_folder(): 
     """
     Ask for the folder name until the user enters a valid one
     """
-    show_folders()
+    show_folders() 
     print()
 
-    folder = input("Enter the name of the desired folder: ").strip().lower()
+    folder = input("Enter the name of the desired folder: ").strip().lower() 
     while not folder_exists(folder):
         print("❌ Folder not found! Check the name you entered and try again.\n")
         show_folders()
@@ -26,8 +26,8 @@ def ask_photo_number(folder):
     """
     Ask for the photo number and ensure it is between 1 and the total number of photos in the folder.
     """
-    total = total_photos(folder)
-    num  = int(input(f"Enter the photo number (1 to {total}): "))
+    total = total_photos(folder) 
+    num  = int(input(f"Enter the photo number (1 to {total}): ")) 
 
     while num < 1 or num > total:
         print(f"Number out of range! Choose a value between 1 and {total}.")
@@ -81,14 +81,14 @@ def main():
 
         elif option == "2":
             # Analyze a single photo
-            folder = ask_folder()
+            folder = ask_folder() 
             num = ask_photo_number(folder)
             photo = photo_name(folder, num)
 
             # Retrieve object statistics from the black-box functions
             total_objs = count_objects(photo, min_confidence_level)
             main_obj = main_object(photo)
-            highest_conf = max_confidence(photo)
+            highest_conf = max_confidence(photo) 
 
             # Display photo path, object count, main object, and highest confidence as a percentage
             print(f"\n--- Photo Analysis ---")
@@ -128,11 +128,11 @@ def main():
         elif option == "4":
             # Generate a complete summary report for a folder
             folder = ask_folder()
-            total = total_photos(folder)
+            total = total_photos(folder) 
 
             # Initialize accumulators for total objects and empty photos
-            total_objects = 0
-            empty_photos = 0
+            total_objects = 0 
+            empty_photos = 0 
 
             print(f"--- Folder Report: '{folder}' (min confidence: {min_confidence_level:.2f}) ---")
 
