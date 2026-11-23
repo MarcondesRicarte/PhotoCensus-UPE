@@ -215,6 +215,9 @@ def main():
         print(" 5 - Foto mais cheia e mais vazia. ")
         print(" 6 - Procurar uma classe. ")
         print(" 7 - Gráfico de barras. ")
+        print(" 8 - Carregar acervo.")
+        print(" 9 - Detecções de uma foto.")
+        print(" 10 - Inventário.")
         print(" 11 - Ranking Top N.")
         print(" 12 - Busca reversa.")
         print(" 13 - Comparar pastas.")
@@ -276,7 +279,7 @@ def main():
             # Validadando o número digitado
             while numero < 1 or numero > total:
                 print("Número inválido!")
-                numero = int(input("Digite novamente: "))
+                numero = ler_inteiro("Digite novamente: "))
 
             # Guardando resultado (Caminho) na variavel foto
             foto = photo_name(pasta, numero)
@@ -314,7 +317,7 @@ def main():
             # Validando o número digitado 
             while number < 1 or number > total:
                 print("Número inválido!")
-                number = int(input("Digite novamente: "))
+                number = ler_inteiro("Digite novamente: "))
 
             photo = photo_name(folder, number)
             class_name = input("Digite a classe que deseja procurar: ")
@@ -479,7 +482,7 @@ def main():
 
 
         elif option == 8:
-             resultado = load_collection()
+             resultados = load_collection()
 
         elif option == 9:
             show_folders()
@@ -493,7 +496,7 @@ def main():
             # Validando o número digitado 
             while number < 1 or number > total:
                 print("Número inválido!")
-                number = int(input("Digite novamente: "))
+                number = ler_inteiro("Digite novamente: "))
 
 
 
