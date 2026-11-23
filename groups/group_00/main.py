@@ -527,7 +527,8 @@ def main():
 
             inventory = build_inventory(resultados, photos, nivel_confianca)
             show_inventory(inventory)
-                elif option == 11:
+            
+        elif option == 11:
             inventory = build_inventory(resultados, list(resultados), nivel_confianca)
             top_n_ranking(inventory)
         
