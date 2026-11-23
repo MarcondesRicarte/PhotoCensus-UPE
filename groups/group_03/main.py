@@ -4,6 +4,8 @@ import sys
 GROUP_DIR = os.path.dirname(os.path.abspath(__file__)) 
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit")) 
 from black_box import *
+from ui_utils import *
+from module1_ops import *
 
 
 def ask_folder(): 
@@ -38,31 +40,10 @@ def ask_photo_number(folder):
 
 def main():
     min_confidence_level = 0.5
+    running = True
 
-    while True:
-        print("\n" + "=" * 40)
-        print(f"{'PHOTOCENSUS - MENU':^40} Group 03")
-        print("=" * 40)
-        print(f"Current minimum confidence: {min_confidence_level:.2f}")
-        print("-" * 40)
-        # Configure minimum confidence
-        print("[ 1 ] - Change minimum confidence")
-        # Analyze a photo
-        print("[ 2 ] - Analyze a photo")
-        # Count class in a photo
-        print("[ 3 ] - Count class in a photo")
-        # Folder report
-        print("[ 4 ] - Folder report")
-        # Most and least populated photo
-        print("[ 5 ] - Most and least populated photo")
-        # Search class in folder
-        print("[ 6 ] - Search class in folder")
-        # Text-based bar chart
-        print("[ 7 ] - Bar chart (text)")
-        # Exit program
-        print("[ 0 ] - Exit")
-        print("=" * 40)
-
+    while running:
+        show_menu(min_confidence_level)
         option = input("Choose an option: ").strip()
 
         if option == "1":
@@ -261,7 +242,14 @@ def main():
 
         elif option == "0":
             print("Exiting system. Goodbye!")
-            break
+            running = False
+
+        elif option == "1":
+            min_confidence_level = change_minimum_confidence()
+
+        elif option in ("2", "3", "4", "5", "6", "7"):
+            folder = ask_folder()
+            handle_folder_option(option, folder, min_confidence_level)
 
         else:
             print("❌ Invalid option! Please try again.")
