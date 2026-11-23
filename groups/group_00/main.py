@@ -237,7 +237,7 @@ def main():
             option = int(option)
         
         else:
-            print("Opção inválida. Digite um número inteiro entre 0 e 7.")
+            print("Opção inválida. Digite um número inteiro entre 0 e 14.")
             continue
         
         if option == 0:
@@ -292,7 +292,7 @@ def main():
             print(f"Caminho: {foto}")
             print(f"Quantidade de objetos: {quantidade}")
             print(f"Objeto principal: {principal}")
-            print(f"Maior confiança: {porcentagem} %")
+            print(f"Maior confiança: {porcentagem:.0f} %")
             print('-'*30)
             
 
@@ -473,12 +473,13 @@ def main():
             for numero in range(1,total + 1):
                 foto = photo_name(folder,numero)
                 quantidade = count_objects(foto,nivel_confianca)
-                print(f"{os.path.basename(foto)} | ", end="")
+                nome = os.path.splitext(os.path.basename(foto))[0]
+                print(f"{nome} | ", end="")
             #imprimi um # para cada objeto
                 for i in range(quantidade):
                     print("#", end=" ")
-                print(f"A quantidade de objetos foi ({quantidade})")
-            print("-"* 30)
+                print(f" ({quantidade})")
+            print("-" * 30)
 
 
         elif option == 8:
