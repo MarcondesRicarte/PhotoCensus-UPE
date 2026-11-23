@@ -161,13 +161,51 @@ def show_bar_chart(folder, confidence): #requisito 9
 
         print(f"{folder}_{photo_number} | {chart} ({total_objects})")
 
+#modulo2 requisitos
 
+def collection_results():  #requisito 1
+    # detecções, armazenamento de resultados e resumo
+    results = {}
+
+    folders = list_folders()
+
+    folder_count = 0
+    photo_count = 0
+    detection_count = 0
+
+    for folder in folders:
+        folder_count += 1
+
+        photos = list_photos(folder)
+
+        for photo in photos:
+            photo_count += 1
+            detections = detect(photo)
+            results[photo] = detections
+            detection_count += len(detections)
+
+    print("\n--- ACERVO ---")
+    print(f"Pastas: {folder_count}")
+    print(f"Fotos: {photo_count}")
+    print(f"Detecções: {detection_count}")
+
+    return results
+
+def filter_detections(detections, confidence):  #requisito 2
+    #filtro de confiança, filtra os resultados de acordo com a confiança escolhida.
+    filtered = []
+
+    for class_name, score in detections:
+        if score >= confidence:
+            filtered.append((class_name, score))
+
+    return filtered
 
 #Menus
 def show_menu(confidence): #menu principal
     print('\n--- OPTIONS ---')
     print(f'-- Confiança Mínima atual {confidence}--\n')
-    print('1 - configurar a confiança mínima')
+    print('1 - Configurar a confiança mínima')
     print('2 - Analisar uma foto')
     print('3 - Analisar uma pasta')
     print('0 - Sair')
