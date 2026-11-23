@@ -67,14 +67,143 @@ def show_inventory(inventory):
     for class_name, amount in inventory.items():
         print(f"{class_name}: {amount}")
 
+def bubble_sort_desc(ranking):
+    '''Ordena a lista de tuplas (classe, quantidade) em ordem decrescente (bolha).'''
+    for i in range(len(ranking)-1):
+        for j in range(len(ranking) -1 -i):
+            if ranking[j][1] < ranking[j + 1][1]:
+                ranking[j], ranking[j + 1] = ranking[j + 1], ranking[j]
+    return ranking
 
+def ask_top_n(total):
+    """Pede o N até ser um inteiro entre 1 e o total de classes."""
+    n = input(f"Quantas classes deseja ver (1-{total})? ")
+    while not (n.isdigit() and 1 <= int(n) <= total):
+        n = input(f"Inválido! Digite um inteiro entre 1 e {total}: ")
+    return int(n)
 
+def top_n_ranking(inventory):
+    """Requisito 4: converte o inventário em lista, ordena e mostra o Top N."""
+    ranking = bubble_sort_desc(list(inventory.items()))
+    if not ranking:
+        print("Nenhum objeto encontrado.")
+        return ranking
 
+    n = ask_top_n(len(ranking))
+    print(f"\n=== Top {n} classes ===")
+    for pos in range(n):
+        print(f"{pos + 1}. {ranking[pos][0]}: {ranking[pos][1]}")
+    return ranking
+
+def build_reverse_index(resultados, min_confidence):
+    """Monta o índice reverso {classe: [fotos onde ela aparece]}."""
+    index = {}
+    for photo in resultados:
+        for class_name, confidence in filter_detections(resultados[photo], min_confidence):
+            if class_name not in index:
+                index[class_name] = []
+            if photo not in index[class_name]:
+                index[class_name].append(photo)
+    return index
+
+def reverse_search(resultados, min_confidence):
+    """Requisito 5: mostra as fotos onde uma classe aparece e quantas vezes."""
+    index = build_reverse_index(resultados, min_confidence)
+    print("Classes disponíveis:", ", ".join(index))
+    class_name = input("Digite a classe: ").strip().lower()
+
+    if class_name not in index:
+        print(f"Classe '{class_name}' não encontrada com confiança >= {min_confidence}.")
+        return
+
+    print(f"\n=== Fotos com '{class_name}' ({len(index[class_name])}) ===")
+    for photo in index[class_name]:
+        amount = 0
+        for name, confidence in filter_detections(resultados[photo], min_confidence):
+            if name == class_name:
+                amount += 1
+        print(f"{os.path.basename(photo)}: {amount}")
+
+def folder_classes(resultados, folder, min_confidence):
+    """Devolve o conjunto (set) de classes distintas de uma pasta."""
+    classes = set()
+    for photo in list_photos(folder):
+        for class_name, confidence in filter_detections(resultados[photo], min_confidence):
+            classes.add(class_name)
+    return classes
+
+def ask_folder(message):
+    """Pede o nome da pasta até ela existir."""
+    folder = input(message).strip()
+    while not folder_exists(folder):
+        folder = input("Pasta inválida. Digite de novo: ").strip()
+    return folder
+
+def compare_folders(resultados, min_confidence):
+    """Requisito 6: compara as classes de duas pastas usando conjuntos."""
+    show_folders()
+    folder1 = ask_folder("Primeira pasta: ")
+    folder2 = ask_folder("Segunda pasta: ")
+    set1 = folder_classes(resultados, folder1, min_confidence)
+    set2 = folder_classes(resultados, folder2, min_confidence)
+
+    results = [
+        ("Em comum", set1 & set2),
+        (f"Só em {folder1}", set1 - set2),
+        (f"Só em {folder2}", set2 - set1),
+        ("União", set1 | set2),
+    ]
+    for title, classes in results:
+        print(f"{title} ({len(classes)}): {', '.join(classes) or 'nenhuma'}")
+
+def build_matrix(resultados, folders, classes, min_confidence):
+    """Monta a matriz: cada linha é uma pasta, cada coluna é uma classe."""
+    matrix = []
+    for folder in folders:
+        inventory = build_inventory(resultados, list_photos(folder), min_confidence)
+        row = []
+        for class_name in classes:
+            row.append(inventory.get(class_name, 0))
+        matrix.append(row)
+    return matrix
+
+def show_matrix(resultados, min_confidence):
+    """Requisito 7: imprime a matriz pasta x classe com totais e o maior valor."""
+    folders = list_folders()
+    classes = list(build_inventory(resultados, list(resultados), min_confidence))
+    if not classes:
+        print("Nenhum objeto encontrado.")
+        return
+
+    matrix = build_matrix(resultados, folders, classes, min_confidence)
+
+    # cabeçalho (nomes das classes cortados em 7 letras para alinhar)
+    print(f"{'':<13}" + "".join(f"{name[:7]:>8}" for name in classes) + f"{'Total':>8}")
+
+    col_totals = [0] * len(classes)
+    best_value, best_folder, best_class = 0, "", ""
+
+    for i in range(len(folders)):
+        line = f"{folders[i]:<13}"
+        row_total = 0
+        for j in range(len(classes)):
+            value = matrix[i][j]
+            line += f"{value:>8}"
+            row_total += value
+            col_totals[j] += value
+            # guarda a maior combinação (pasta, classe)
+            if value > best_value:
+                best_value, best_folder, best_class = value, folders[i], classes[j]
+        print(line + f"{row_total:>8}")
+
+    print(f"{'Total':<13}" + "".join(f"{total:>8}" for total in col_totals))
+    print(f"\nMaior valor: {best_class} na pasta {best_folder} ({best_value})")
 
 
 def main():
     nivel_confianca = 0.5
     print("PhotoCensus - Group 01")
+    resultados = load_collection()
     show_folders()
     # Your menu (while loop) starts here...
     while True:
@@ -86,6 +215,10 @@ def main():
         print(" 5 - Foto mais cheia e mais vazia. ")
         print(" 6 - Procurar uma classe. ")
         print(" 7 - Gráfico de barras. ")
+        print(" 11 - Ranking Top N.")
+        print(" 12 - Busca reversa.")
+        print(" 13 - Comparar pastas.")
+        print(" 14 - Matriz pasta x classe.")
         print(" 0 - Sair. ")
 
         def ler_inteiro(mensagem):
@@ -345,9 +478,8 @@ def main():
             print("-"* 30)
 
 
-
         elif option == 8:
-             acervo = load_collection()
+             resultado = load_collection()
 
         elif option == 9:
             show_folders()
@@ -377,8 +509,6 @@ def main():
                     print(f"- {classe}: {confianca:.2f}")
 
 
-
-            
         elif option == 10:
             choice = input("Inventário do acervo inteiro (A) ou de uma pasta (P)? ").strip().upper()
             while choice != "A" and choice != "P":
@@ -397,6 +527,19 @@ def main():
 
             inventory = build_inventory(resultados, photos, nivel_confianca)
             show_inventory(inventory)
+                elif option == 11:
+            inventory = build_inventory(resultados, list(resultados), nivel_confianca)
+            top_n_ranking(inventory)
+        
+        elif option == 12:
+            reverse_search(resultados, nivel_confianca)
+
+        elif option == 13:
+            compare_folders(resultados, nivel_confianca)
+
+        elif option == 14:
+            show_matrix(resultados, nivel_confianca)
+
         
         else:
             print("Opção inválida!")
