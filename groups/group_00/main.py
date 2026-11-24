@@ -279,7 +279,7 @@ def main():
             # Validadando o número digitado
             while numero < 1 or numero > total:
                 print("Número inválido!")
-                numero = ler_inteiro("Digite novamente: "))
+                numero = ler_inteiro("Digite novamente: ")
 
             # Guardando resultado (Caminho) na variavel foto
             foto = photo_name(pasta, numero)
@@ -317,7 +317,7 @@ def main():
             # Validando o número digitado 
             while number < 1 or number > total:
                 print("Número inválido!")
-                number = ler_inteiro("Digite novamente: "))
+                number = ler_inteiro("Digite novamente: ")
 
             photo = photo_name(folder, number)
             class_name = input("Digite a classe que deseja procurar: ")
@@ -497,7 +497,7 @@ def main():
             # Validando o número digitado 
             while number < 1 or number > total:
                 print("Número inválido!")
-                number = ler_inteiro("Digite novamente: "))
+                number = ler_inteiro("Digite novamente: ")
 
 
 
