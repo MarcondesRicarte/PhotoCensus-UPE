@@ -161,45 +161,47 @@ def show_bar_chart(folder, confidence): #requisito 9
 
         print(f"{folder}_{photo_number} | {chart} ({total_objects})")
 
-#modulo2 requisitos
+#=================== MÓDULO-2 REQUISITOS ==============================================
 
 def collection_results():  #requisito 1
-    # detecções, armazenamento de resultados e resumo
-    results = {}
-
+    # carrega todas as fotos e mostra um resumo do acervo
+    results = {} #dicionario que armazena todas as fotos
     folders = list_folders()
-
-    folder_count = 0
-    photo_count = 0
     detection_count = 0
 
     for folder in folders:
-        folder_count += 1
-
-        photos = list_photos(folder)
-
-        for photo in photos:
-            photo_count += 1
-            detections = detect(photo)
-            results[photo] = detections
-            detection_count += len(detections)
-
+        for photo in list_photos(folder):        
+            results[photo] = detect(photo)
+            detection_count += len(results[photo])
+            
     print("\n--- ACERVO ---")
-    print(f"Pastas: {folder_count}")
-    print(f"Fotos: {photo_count}")
+    print(f"Pastas: {len(folders)}")
+    print(f"fotos: {len(results)}")
     print(f"Detecções: {detection_count}")
-
     return results
 
-def filter_detections(detections, confidence):  #requisito 2
+def filter_detections(photo, confidence):  #requisito 2 (refazer)
     #filtro de confiança, filtra os resultados de acordo com a confiança escolhida.
     filtered = []
-
-    for class_name, score in detections:
+    detections = detect(photo)
+    for class_name, score in detections: #itera cada tupla da lista e comprara a confiança
         if score >= confidence:
             filtered.append((class_name, score))
 
     return filtered
+
+def build_inventory(confidence, photos): #requisito 3 (refazer)
+    inventory = {}
+
+    for photo in photos:
+        filtered = filter_detections(photo, confidence)
+
+        for class_name in filtered:
+            if class_name in inventory:
+                inventory[class_name] +=1
+            else:
+                inventory[class_name] = 1
+    return inventory
 
 #Menus
 def show_menu(confidence): #menu principal
@@ -208,6 +210,7 @@ def show_menu(confidence): #menu principal
     print('1 - Configurar a confiança mínima')
     print('2 - Analisar uma foto')
     print('3 - Analisar uma pasta')
+    print('4 - Carga de Acervo')
     print('0 - Sair')
     return input("Escolha uma opção: ")
 
@@ -273,6 +276,8 @@ def main():
             analyze_photo(confidence)
         elif option == "3":
             analyze_folder(confidence)
+        elif option == "4":
+            collection_results()
         elif option == "0":
             break
         else:
