@@ -458,6 +458,7 @@ def inventory_histogram(dataset, min_conf):
 def manage_report_file(dataset, min_conf):
     print("\n1- Salvar relatório em report.txt")
     print("2- Ler relatório salvo (report.txt)")
+    print("3- Voltar para o menu")
     report_path = os.path.join(GROUP_DIR, "report.txt")
     while True:
         choice = input("Escolha uma opção: ").strip()
@@ -485,9 +486,12 @@ def manage_report_file(dataset, min_conf):
             with open(report_path, "r", encoding="utf-8") as f:
                 print(f.read())
             break
+
+        elif choice == "3":
+            break
+        
         else:
             print("Erro: Opção inválida.")
-            choice = input("Escolha uma opção: ").strip()
 
 #Fim das Funções Módulo 2
 
@@ -504,7 +508,6 @@ def show_menu(min_conf):
     print("5- Foto mais cheia e mais vazia da pasta")
     print("6- Procurar uma classe na pasta")
     print("7- Gráfico de objetos por foto na pasta")
-    print("-" * 45)
     print("8- Inventário e Ranking Top N")
     print("9- Busca reversa por classe")
     print("10- Comparar duas pastas (conjuntos)")
