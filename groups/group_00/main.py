@@ -371,7 +371,7 @@ def main():
             option = int(option)
         
         else:
-            print("Opção inválida. Digite um número inteiro entre 0 e 14.")
+            print("Opção inválida. Digite um número inteiro entre 0 e 17.")
             continue
         
         if option == 0:
