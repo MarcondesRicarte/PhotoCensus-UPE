@@ -737,7 +737,7 @@ def analyze_folder(confidence, results):
             print(MSG_INVALID)
 
 
-#MAIN
+#Principal
 
 def main():
     print("PhotoCensus - Group 05")
