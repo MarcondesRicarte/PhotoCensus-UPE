@@ -121,3 +121,8 @@ def handle_folder_option(option, folder, min_conf):
 
     elif option == "7":
         print_bar_chart(folder, min_conf)
+
+    elif option == "9":
+        class_name = ask_class_name()
+        search_class_in_folder(folder, class_name, min_conf)
+

@@ -247,7 +247,7 @@ def main():
         elif option == "1":
             min_confidence_level = change_minimum_confidence()
 
-        elif option in ("2", "3", "4", "5", "6", "7"):
+        elif option in ("2", "3", "4", "5", "6", "7", "9"):
             folder = ask_folder()
             handle_folder_option(option, folder, min_confidence_level)
 
