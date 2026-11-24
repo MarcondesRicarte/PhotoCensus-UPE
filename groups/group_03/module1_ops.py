@@ -1,5 +1,4 @@
 from black_box import *
-from ui_utils import *
 
 # ==========================================
 #    OPTION 2: ANALYZE SINGLE PHOTO
@@ -85,44 +84,3 @@ def search_class_stats(folder, class_name, min_conf):
 
     percentage = (photos_with_class / total_phts) * 100 if total_phts > 0 else 0.0
     return total_appearances, photos_with_class, percentage
-
-
-# ==========================================
-#        MENU & MAIN CONTROLLER
-# ==========================================
-
-def handle_folder_option(option, folder, min_conf):
-    """Route folder-based options (2 to 7) to their processing and output functions."""
-    if option == "2" or option == "3":
-        num = ask_photo_number(folder)
-
-        if option == "2":
-            photo, total_objs, main_obj, highest_conf = get_photo_stats(folder, num, min_conf)
-            print_photo_analysis(photo, total_objs, main_obj, highest_conf)
-
-        else:
-            photo = photo_name(folder, num)
-            class_name = ask_class_name()
-            total_class = count_class(photo, class_name, min_conf)
-            print_class_in_photo(photo, class_name, total_class, min_conf)
-
-    elif option == "4":
-        total_objs, avg, empty = compute_folder_report(folder, min_conf)
-        print_folder_summary(total_objs, avg, empty)
-
-    elif option == "5":
-        m_num, m_qtd, l_num, l_qtd = find_population_extremes(folder, min_conf)
-        print_population_extremes(folder, min_conf, m_num, m_qtd, l_num, l_qtd)
-
-    elif option == "6":
-        class_name = ask_class_name()
-        total_app, phts_with, pct = search_class_stats(folder, class_name, min_conf)
-        print_class_search(folder, class_name, total_app, phts_with, pct)
-
-    elif option == "7":
-        print_bar_chart(folder, min_conf)
-
-    elif option == "9":
-        class_name = ask_class_name()
-        search_class_in_folder(folder, class_name, min_conf)
-

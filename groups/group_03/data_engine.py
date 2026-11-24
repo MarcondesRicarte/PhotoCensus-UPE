@@ -1,9 +1,5 @@
 import os
-import sys
-
-GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
-from black_box import list_folders, list_photos, detect
+from black_box import *
 
 
 # ==========================================
@@ -60,24 +56,45 @@ def build_inventory(results, min_conf, target_folder=""):
     for photo, detecions in results.items():
         folder_name = os.path.basename(os.path.dirname(photo))
 
-        if target_folder != "" and folder_name != target_folder:
-            pass
-
-        else:
-            filtered = filter_detections(detecions, min_conf)
-
-            for class_name, _ in filtered:
-
+        if target_folder == "" or folder_name == target_folder:
+            for class_name, _ in filter_detections(detecions, min_conf):
                 if class_name in inventory:
                     inventory[class_name] += 1
-
                 else:
                     inventory[class_name] = 1
 
     return inventory
+
+
+# ==========================================
+#    RANKING TOP N (MANUAL SELECTION SORT)
+# ==========================================
+
+def build_ranking(invetory):
+    """Convert inventory dict into [(class_name, amount), ...] sorted descending."""
+    ranking = []
+    for class_name, amount in invetory.items():
+        ranking.append((class_name, amount))
+
+    total_items = len(ranking)
+    for i in range(total_items):
+        max_index = i
+        for j in range(i + 1, total_items):
+            if ranking[j][1] > ranking[max_index][1]:
+                max_index = j
+
+        if max_index != i:
+            temp = ranking[i]
+            ranking[i] = ranking[max_index]
+            ranking[max_index] = temp
+
+    return ranking
+
+
 # ==========================================
 #    REVERSE INDEX & FOLDER SEARCH
 # ==========================================
+
 def build_reverse_index(results, min_conf):
     """
     Build a {class_name: [photos]} dictionary filtered by min_conf, with no duplicate photos.
@@ -86,31 +103,86 @@ def build_reverse_index(results, min_conf):
     reverse_index = {}  
 
     for photo, detections in results.items():
-        filtered = filter_detections(detections, min_conf)
-
-        for class_name, _ in filtered:
-    
+        for class_name, _ in filter_detections(detections, min_conf):
             if class_name in reverse_index:
                 if photo not in reverse_index[class_name]:
-                    reverse_index[class_name] += [photo]
-            
+                    reverse_index[class_name].append(photo)
+
             else:
                 reverse_index[class_name] = [photo]
+
     return reverse_index
 
 
-def search_class_in_folder(folder, class_name, min_conf):
-    results_class_in_folder = {}
-    for photo in list_photos(folder):
-        results_class_in_folder[photo] = detect(photo)
+def get_reverse_search_details(results, reverse_index, target_class, min_conf):
+    """Return [(photo_path, count_in_photo), ...] for a class across the dataset."""
+    photos = reverse_index.get(target_class, [])
+    details = []
 
-    reverse_index = build_reverse_index(results_class_in_folder, min_conf)
-    photos = reverse_index.get(class_name, [])
+    for photo in photos:
+        count = 0
+        for class_name, _ in filter_detections(results[photo], min_conf):
+            if class_name == target_class:
+                count += 1
 
-    if photos:
-        print(f"Photos with {class_name} in folder {folder}:")
-        for photo in photos:
-            print(f"- {photo}")
-    else:
-        print(f"No photos with {class_name} found in folder{folder}.")
+        details.append((photo, count))
 
+    return details
+
+
+# ==========================================
+#      FOLDER COMPARISON WITH SETS
+# ==========================================
+
+def get_folder_classes_set(results, target_folder, min_conf):
+    """Return a set of distinct class names detected in a specific folder."""
+    classes_set = set()
+
+    for photo, detections in results.items():
+        folder_name = os.path.basename(os.path.dirname(photo))
+
+        if folder_name == target_folder:
+            for class_name, _ in filter_detections(detections, min_conf):
+                classes_set.add(class_name)
+
+    return classes_set
+
+
+def compare_folder_sets(set_a, set_b):
+    """Return common (&), exclusive to A (-), exclusive to B (-), and union (|)."""
+    return (set_a & set_b), (set_a - set_b), (set_b - set_a), (set_a | set_b)
+
+
+# ==========================================
+#       FOLDER x CLASS MATRIX
+# ==========================================
+
+def build_folder_class_matrix(results, min_conf):
+    """
+    Build 2D matrix (rows = folders, cols = distinct classes),
+    row totals, column totals, and the (folder, class, max_val) peak.
+    """
+    folders = list_folders()
+    classes = list(build_inventory(results, min_conf).keys())
+    matrix = []
+    row_totals = []
+    col_totals = [0] * len(classes)
+    max_val, max_folder, max_class = -1, "", ""
+
+    for folder in folders:
+        folder_inv = build_inventory(results, min_conf, folder)
+        row, row_sum = [], 0
+
+        for j in range(len(classes)):
+            val = folder_inv.get(classes[j], 0)
+            row.append(val)
+            row_sum += val
+            col_totals[j] += val
+
+            if val > max_val:
+                max_val, max_folder, max_class = val, folder, classes[j]
+
+        matrix.append(row)
+        row_totals.append(row_sum)
+
+    return folders, classes, matrix, row_totals, col_totals, (max_folder, max_class, max_val)
