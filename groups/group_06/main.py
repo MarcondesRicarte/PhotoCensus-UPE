@@ -1,306 +1,772 @@
 """
 PhotoCensus - Grupo 06
-Módulo 1: sistema em console
+Módulo 2: sistema completo em UM arquivo
+
+Organização deste arquivo (de cima para baixo):
+  1. ENTRADAS        = perguntas ao usuário, com validação
+  2. ACERVO          = carga, filtro, inventário, ranking e busca reversa (requisitos 1 a 5)
+  3. ANÁLISES        = comparação, matriz, histograma e relatório (requisitos 6 a 9)
+  4. MÓDULO 1        = funcionalidades do Módulo 1 com as novas estruturas
+  5. MENU E main()   = o main() só organiza o menu; o trabalho está nas funções (requisito 10)
+
+Formato dos dados usados pelas funções:
+  resultados     = {foto: [(classe, confianca), ...]}   dicionário de resultados
+  filtrados      = o mesmo formato, já filtrado pela confiança mínima
+  inventario      = {classe: quantidade}                 dicionário de contagem
+  indice_reverso = {classe: [fotos onde aparece]}       índice reverso
+  ranking       = [(classe, quantidade), ...]          lista de tuplas, do maior para o menor
 """
 import os
 import sys
 
 # ---------------------------------------------------------------
-# POR QUE USAMOS CAMINHOS DE PASTA AQUI?
 # O black_box.py (as funções prontas do professor) fica na pasta "kit".
-# O nosso main.py fica em outra pasta: "groups/group_06".
-# Quando escrevemos "from black_box import *", o Python só procura o black_box.py
-# em algumas pastas conhecidas (a lista chamada sys.path), e a pasta "kit" NÃO está nela.
-# Sem as linhas abaixo dá erro: ModuleNotFoundError: No module named 'black_box'.
-# Elas descobrem onde está este arquivo e ensinam ao Python o caminho da pasta "kit".
+# os.path.join(... )= junta pedaços de caminho (usa '/'ou '\'conforme o sistema; Linux ou Windows)
+# '..'= 'subir uma pasta'
+# sys.path.append(... )= acrescenta essa pasta na lista onde o Python procura arquivos
+# from black_box import * = traz todas as funções do black_box.py (folder_exists, count_objects...)
 # ---------------------------------------------------------------
 
-# Permite que este arquivo encontre o black_box.py na pasta /kit
-
-# __file__ = caminho deste arquivo (main.py); o Python preenche sozinho
-# os.path.abspath(...) = transforma em caminho COMPLETO (ex.: /content/PhotoCensus-UPE/groups/group_06/main.py)
-# os.path.dirname(...) = fica só com a PASTA do arquivo (tira o "main.py") -> .../groups/group_06
 GROUP_DIR = os.path.dirname(os.path.abspath(__file__))
-
-# os.path.join(...) = junta pedaços de caminho (usa "/" ou "\" conforme o sistema: Linux ou Windows)
-# ".." = "subir uma pasta":  groups/group_06  ->  groups  ->  raiz do projeto
-# Então GROUP_DIR + ".." + ".." + "kit" aponta para a pasta kit, na raiz do projeto:
-#   .../groups/group_06/../../kit   é o mesmo que   .../kit
-# sys.path.append(...) = acrescenta essa pasta na lista onde o Python procura arquivos
-# Usando o __file__, o caminho é calculado a partir do próprio arquivo e funciona de qualquer pasta.
 sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
-
-# from black_box import * = traz todas as funções do black_box.py (folder_exists, count_objects...)
-#   quer dizer "não avise sobre estes itens nesta linha":
-from black_box import *  # noqa: E402,F401,F403
+from black_box import *
 
 
-
-def show_menu(min_confidence):
-
-    print("\n===== PHOTOCENSUS - GROUP 06 =====")
-
-    print(f"Current minimum confidence: {min_confidence}")
-
-    print("1 - Set minimum confidence")
-    print("2 - Analyze a photo")
-    print("3 - Count a class in a photo")
-    print("4 - Folder report")
-    print("5 - Fullest and emptiest photo")
-    print("6 - Search a class in a folder")
-    print("7 - Text bar chart")
-    print("0 - Exit")
-    print("====================================")
+# Guarda a lista de fotos de cada pasta, para não chamar list_photos toda hora.
+# Formato: {pasta: [fotos]}. É preenchido sozinho, na primeira vez que a pasta é usada.
+fotos_por_pasta = {}
 
 
-    # Função: listar pastas
-    # 1: definir nivel mínimo de confiança
-    # 2: analisar uma foto
-    # 3: contar uma classe
-    # 4: relatório da pasta
-    # 5: encontrar foto com mais e menos objetos
-    # 6: busca uma classe na pasta
-    # 7: gráfico de barras texual
-    # 0: sair
+# ===============================================================
+# 1. ENTRADAS: perguntas ao usuário (todas usam uma "bandeira" valido que vira True
+# quando o valor é aceito; o try/except evita que o programa feche com erro)
+# ===============================================================
 
-def ask_folder():
-    # Pergunta até o usuário digitar uma pasta que existe (usa folder_exists do kit)
-    # while not folder_exists = entra no laço quando a pasta não é encontrada
 
-    show_folders()
-    folder = input("Folder name: ").strip().lower()
-    # .strip() remove espaços das pontas; .lower() deixa tudo em minúsculas
+def ask_folder(folders, mensagem="Nome da pasta: "):
+    # Pergunta até o usuário digitar uma pasta que existe na lista "folders".
+    print("Pastas disponíveis: ")
+    for folder in folders:
+        print(folder)
+    print()
 
-    while not folder_exists(folder):
-        print("Folder not found! Try again.")
-        folder = input("Folder name: ").strip().lower()
-
+    folder = input(mensagem).strip().lower()
+    while folder not in folders:                # "not in" também funciona com lista
+        print("Pasta não encontrada! Tente de novo.")
+        folder = input(mensagem).strip().lower()
     return folder
-    # retorna a pasta
 
 
-def ask_photo_number(folder):
+def ask_folder_all(folders):
+    # Igual ao ask_folder, mas deixar vazio significa "acervo inteiro" (devolve "").
+    print("Pastas disponíveis: ")
+    for folder in folders:
+        print(folder, end=" ")
+    print()
 
-    # Pergunta qual foto deseja analisar (o número estar entre 1 e o total de fotos da pasta)
+    folder = input("Digite a pasta (ou deixe vazio para o acervo inteiro): ").strip().lower()
+    while folder != "" and folder not in folders:
+        print("Pasta não encontrada! Tente de novo.")
+        folder = input("Digite a pasta (ou deixe vazio para o acervo inteiro): ").strip().lower()
+    return folder
 
-    total = total_photos(folder)
-    print(f"Total photos: {total}")
 
-    # input() devolve sempre TEXTO (str), mesmo que o usuário digite 3
-    photo_analysis = input(f"Photo number (1 to {total}): ").strip()
+def ask_photo(photos):
+    # Mostra quantas fotos a pasta tem e devolve o CAMINHO da foto escolhida.
+    # IMPORTANTE: só chame esta função com a lista NÃO vazia (veja choose_photo).
+    total = len(photos)
+    print(f"Total de fotos: {total}")
 
-    # .isdigit() = método de texto: devolve True se o texto tiver SÓ números (0 a 9)
-    #   "3".isdigit()   -> True
-    #   "abc".isdigit() -> False  (tem letra)
-    #   "".isdigit()    -> False  (vazio)
-    # Por que testar antes? Porque int("abc") dá erro e fecha o programa.
-    #
-    # A condição do while é lida da esquerda para a direita:
-    # O int() só é executado se o texto já passou pelo isdigit() .
+    valido = False
+    while not valido:
+        try:
+            # int() gera ValueError se o texto não for um número inteiro (ex.: "abc", "2.5", vazio)
+            numero = int(input(f"Número da foto (1 a {total}): "))
+            if numero >= 1 and numero <= total:
+                valido = True
+            else:
+                print("Número inválido! Tente de novo.")
+        except ValueError:
+            print("Número inválido! Tente de novo.")
 
-    while not photo_analysis.isdigit() or int(photo_analysis) < 1 or int(photo_analysis) > total:
-        print("Invalid number! Try again.")
-        photo_analysis = input(f"Photo number (1 to {total}): ").strip()
+    return photos[numero - 1]                   # a lista começa em 0, por isso numero - 1
 
-    return int(photo_analysis)  # converte o texto "3" no número 3
+
+def choose_photo(resultados, folder):
+    # Pergunta a foto da pasta. Se a pasta não tem fotos, avisa e devolve None
+    # (assim o ask_photo nunca fica preso num laço sem saída).
+    photos = photos_of_folder(resultados, folder)
+    if len(photos) == 0:
+        print(f"A pasta {folder} não tem fotos.")
+        return None
+    return ask_photo(photos)
 
 
 def ask_confidence():
     # Pergunta até o valor ser um número entre 0 e 1
+    valido = False
+    while not valido:
+        try:
+            # .replace(",", ".") aceita "0,8" e "0.8"; float() gera ValueError se não for número
+            confianca = float(input("Confiança mínima (0 a 1): ").strip().replace(",", "."))
+            if confianca >= 0 and confianca <= 1:
+                valido = True
+            else:
+                print("Valor inválido! Digite um número entre 0 e 1.")
+        except ValueError:
+            print("Valor inválido! Digite um número entre 0 e 1.")
+    return confianca
 
-    confidence_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
-    # . replace("," , ".") = aceita "0,8" e "0.8" (troca a vírgula por ponto)
 
-    # O texto pode ter um ponto decimal ("0.8"), mas para o isdigit() o ponto NÃO é número.
-    # Então testamos uma cópia do texto sem o ponto:
-    #   .replace(".", "", 1) = troca o PRIMEIRO "." por "" (apaga o ponto)
-    #   o último valor (1) é quantas trocas fazer: só 1 ponto é aceito
-    #   "0.8".replace(".", "", 1)   -> "08"   -> isdigit() True   (aceito)
-    #   "0.8.5".replace(".", "", 1) -> "08.5" -> isdigit() False  (recusado)
-    #   "abc", "-1" e ""            -> isdigit() False            (recusados)
-    #
-    # A condição do while é lida da esquerda para a direita:
-    #   1) not ...isdigit()    -> não é número? então é inválido (o "or" já para aqui)
-    #   2) float(confidence_val) > 1  -> é número, mas maior que 1
-    # Não precisa testar "< 0": o sinal de menos já é recusado pelo isdigit().
-    # O float() só é executado se o texto já passou pelo isdigit(), por isso nunca dá erro.
+def ask_top_n(maximo):
+    # Pergunta o N do ranking: um número inteiro de 1 até "maximo" (quantidade de classes)
+    valido = False
+    while not valido:
+        try:
+            n = int(input(f"Quantas classes mostrar (1 a {maximo})? "))
+            if n >= 1 and n <= maximo:
+                valido = True
+            else:
+                print("Número inválido! Tente de novo.")
+        except ValueError:
+            print("Número inválido! Tente de novo.")
+    return n
 
-    while not confidence_val.replace(".", "", 1).isdigit() or float(confidence_val) > 1:
-        print("Invalid value! Type a number between 0 and 1.")
-        confidence_val = input("Minimum confidence (0 to 1): ").strip().replace(",", ".")
 
-    return float(confidence_val)  # agora é seguro: converte o texto "0.8" no número 0.8
+def ask_class(filtrados):
+    # Pergunta o nome de uma classe (as classes do kit estão em inglês: tv, person, car...)
+    print("Classes disponíveis:", list_classes(filtrados))
+
+    class_name = input("Digite a classe: ").strip().lower()
+    while class_name == "":
+        print("Digite alguma classe!")
+        class_name = input("Digite a classe: ").strip().lower()
+    return class_name
+
+
+# ===============================================================
+# 2. ACERVO: requisitos 1 a 5
+# ===============================================================
+
+
+# ---------------------------------------------------------------
+# REQUISITO 1: carga do acervo (roda UMA vez, ao iniciar)
+# ---------------------------------------------------------------
+
+def load_collection(folders):
+    # Monta o dicionário de resultados: {foto: [(classe, confianca), ...]}
+    resultados = {}
+    for folder in folders:                      # laço de fora: cada pasta
+        for photo in list_photos(folder):       # 🔌 list_photos: lista com os caminhos das fotos da pasta
+            resultados[photo] = detect(photo)      # 🔌 detect: lista de tuplas (classe, confianca), desde 0.25
+    return resultados
+
+
+def show_summary(folders, resultados):
+    total_detections = 0
+    for photo in resultados:
+        total_detections += len(resultados[photo])
+
+    print("\n--- Resumo do acervo ---")
+    print(f"Pastas: {len(folders)}")
+    print(f"Fotos: {len(resultados)}")
+    print(f"Detecções: {total_detections}")
+
+
+# ---------------------------------------------------------------
+# REQUISITO 2: filtro de confiança
+# ---------------------------------------------------------------
+
+def filter_detections(detections, confianca_minima):
+    # Recebe uma lista de detecções e devolve uma lista NOVA só com as que passam no filtro.
+    filtrados = []
+    for detection in detections:
+        if detection[1] >= confianca_minima:      # [1] = confiança
+            filtrados.append(detection)
+    return filtrados
+
+
+def filter_collection(resultados, confianca_minima):
+    # Aplica o filtro em todas as fotos e devolve um dicionário novo (o original não muda).
+    filtrados = {}
+    for photo in resultados:
+        filtrados[photo] = filter_detections(resultados[photo], confianca_minima)
+    return filtrados
+
+
+# ---------------------------------------------------------------
+# REQUISITO 3: inventário (dicionário de contagem)
+# ---------------------------------------------------------------
+
+def build_inventory(resultados, folder=""):
+    # {classe: quantidade}. Com folder="" conta o acervo inteiro; com uma pasta, só ela.
+    inventario = {}
+    for photo in resultados:
+        if folder == "" or photo_in_folder(photo, folder):
+            for detection in resultados[photo]:
+                class_name = detection[0]
+                if class_name in inventario:         # "in" em dicionário confere as chaves
+                    inventario[class_name] += 1      # já existe: soma 1
+                else:
+                    inventario[class_name] = 1       # primeira vez: começa em 1
+    return inventario
+
+
+def show_inventory(inventario, folder=""):
+    if folder == "":
+        print("\n--- Inventário do acervo inteiro ---")
+    else:
+        print(f"\n--- Inventário da pasta {folder} ---")
+    if len(inventario) == 0:
+        print("Nenhum objeto encontrado.")
+    for class_name in inventario:
+        print(f"{class_name:<15}: {inventario[class_name]}")
+
+
+# ---------------------------------------------------------------
+# REQUISITO 4: ranking Top N (ordenação feita pelo grupo: bolha)
+# ---------------------------------------------------------------
+
+def inventory_to_list(inventario):
+    # Converte {classe: quantidade} em lista de tuplas [(classe, quantidade), ...]
+    ranking = []
+    for class_name in inventario:
+        ranking.append((class_name, inventario[class_name]))
+    return ranking
+
+
+def sort_ranking(ranking):
+    # Ordenação por bolha (bubble sort), do MAIOR para o MENOR.
+    # Compara vizinhos: se o da esquerda for MENOR que o da direita, troca de lugar.
+    # A cada volta de fora, o menor valor "afunda" para o fim da parte ainda não ordenada.
+    tamanho = len(ranking)
+    for i in range(tamanho - 1):
+        for j in range(tamanho - 1 - i):
+            if ranking[j][1] < ranking[j + 1][1]:      # [1] = quantidade; troque < por > para ordem crescente
+                auxiliar = ranking[j]                    # troca usando uma variável auxiliar
+                ranking[j] = ranking[j + 1]
+                ranking[j + 1] = auxiliar
+    return ranking
+
+
+def show_top_n(ranking, n):
+    print(f"\n--- Top {n} classes mais frequentes ---")
+    for posicao in range(n):
+        item = ranking[posicao]
+        print(f"{posicao + 1}. {item[0]} - {item[1]}")
+
+
+def top_n_option(ranking):
+    # Valida o N e mostra o ranking (se existir alguma classe)
+    if len(ranking) > 0:
+        n = ask_top_n(len(ranking))
+        show_top_n(ranking, n)
+    else:
+      print("Nenhuma classe detectada com essa confiança minima")
+
+# ---------------------------------------------------------------
+# REQUISITO 5: índice reverso e busca reversa
+# ---------------------------------------------------------------
+
+def build_reverse_index(resultados):
+    # {classe: [fotos onde ela aparece]}
+    indice_reverso = {}
+    for photo in resultados:
+        for detection in resultados[photo]:
+            class_name = detection[0]
+            if class_name not in indice_reverso:
+                indice_reverso[class_name] = []                  # primeira vez: cria a lista
+            if photo not in indice_reverso[class_name]:          # não repete a mesma foto
+                indice_reverso[class_name].append(photo)
+    return indice_reverso
+
+
+def search_class(indice_reverso, resultados, class_name):
+    # Lista as fotos onde a classe aparece e quantos objetos dela há em cada foto.
+    if class_name in indice_reverso:
+        print(f"\n--- Fotos com '{class_name}' ---")
+        for photo in indice_reverso[class_name]:
+            quantidade = 0
+            for detection in resultados[photo]:
+                if detection[0] == class_name:
+                    quantidade += 1
+            print(f"{photo}: {quantidade}")
+    else:
+      print(f"Classe {class_name} não encontrada no acervo")
+
+# ---------------------------------------------------------------
+# Recalcula tudo quando a confiança muda
+# ---------------------------------------------------------------
+
+def rebuild(resultados, confianca_minima):
+    # Devolve 4 coisas, todas respeitando a confiança mínima:
+    # (resultados filtrados, inventário, índice reverso, ranking ordenado)
+    filtrados = filter_collection(resultados, confianca_minima)
+    inventario = build_inventory(filtrados)
+    indice_reverso = build_reverse_index(filtrados)
+    ranking = sort_ranking(inventory_to_list(inventario))
+    return filtrados, inventario, indice_reverso, ranking
+
+
+# ===============================================================
+# 3. ANÁLISES: requisitos 6 a 9 e funções auxiliares
+# ===============================================================
+
+
+# ---------------------------------------------------------------
+# FUNÇÕES AUXILIARES
+# ---------------------------------------------------------------
+
+def photo_in_folder(photo, folder):
+    # Confere se a foto pertence à pasta, comparando com a lista de fotos da pasta.
+    # A lista vem do kit (list_photos) só na PRIMEIRA vez; depois fica guardada em
+    # fotos_por_pasta. Isso evita chamar o kit milhares de vezes dentro dos laços.
+    if folder not in fotos_por_pasta:
+        fotos_por_pasta[folder] = list_photos(folder)
+    return photo in fotos_por_pasta[folder]
+
+
+def photos_of_folder(resultados, folder):
+    # Devolve a lista das fotos que pertencem à pasta (na ordem do dicionário)
+    photos = []
+    for photo in resultados:                       # for em dicionário percorre as CHAVES (as fotos)
+        if photo_in_folder(photo, folder):
+            photos.append(photo)
+    return photos
+
+
+def list_classes(resultados):
+    # Devolve a lista de classes DIFERENTES, na ordem em que aparecem (sem repetir).
+    # Usamos lista (e não set) para a ordem ser sempre a mesma em toda execução.
+    classes = []
+    for photo in resultados:
+        for detection in resultados[photo]:        # detection é uma tupla (classe, confianca)
+            class_name = detection[0]           # [0] = primeiro item da tupla
+            if class_name not in classes:       # "not in" = ainda não está na lista
+                classes.append(class_name)
+    return classes
+
+
+# ---------------------------------------------------------------
+# REQUISITO 6: comparação de pastas com conjuntos (set)
+# ---------------------------------------------------------------
+
+def classes_of_folder(resultados, folder):
+    # Devolve um CONJUNTO (set) com as classes que aparecem na pasta.
+    # set() cria um conjunto vazio; .add() coloca um item; repetidos são ignorados sozinhos.
+    classes = set()
+    for photo in resultados:
+        if photo_in_folder(photo, folder):
+            for detection in resultados[photo]:
+                classes.add(detection[0])
+    return classes
+
+
+def compare_folders(resultados, folder_a, folder_b):
+    # Devolve 4 conjuntos: (em_comum, so_a, so_b, uniao)
+    conjunto_a = classes_of_folder(resultados, folder_a)
+    conjunto_b = classes_of_folder(resultados, folder_b)
+
+    em_comum = conjunto_a & conjunto_b      # & = interseção: está nas DUAS pastas
+    so_a = conjunto_a - conjunto_b      # -  = diferença: está só na pasta A
+    so_b = conjunto_b - conjunto_a      # está só na pasta B
+    uniao = conjunto_a | conjunto_b       # | = união: está em pelo menos uma das pastas
+    return em_comum, so_a, so_b, uniao
+
+
+def show_set(titulo, itens, classes_ordenadas):
+    # Mostra os itens do conjunto sempre na mesma ordem (conjunto não tem ordem própria).
+    print(f"{titulo}: ", end="")
+    if len(itens) > 0:
+        for class_name in classes_ordenadas:
+            if class_name in itens:
+                print(class_name, end="  ")
+        print()
+    else:
+        print("(nenhuma)")
+
+def show_comparison(resultados, folder_a, folder_b):
+    em_comum, so_a, so_b, uniao = compare_folders(resultados, folder_a, folder_b)
+    classes = list_classes(resultados)
+
+    print(f"\n--- Comparação: {folder_a} x {folder_b} ---")
+    show_set("Em comum", em_comum, classes)
+    show_set(f"Só em {folder_a}", so_a, classes)
+    show_set(f"Só em {folder_b}", so_b, classes)
+    show_set("União", uniao, classes)
+
+
+# ---------------------------------------------------------------
+# REQUISITO 7: matriz pasta x classe
+# ---------------------------------------------------------------
+
+def build_matrix(resultados, folders, classes):
+    # Matriz = lista de listas. matrix[i][j] = quantas vezes a classe j aparece na pasta i.
+    #            car  person  tv
+    #   street  [ 2,    2,     0 ]   <- matrix[0]
+    #   office  [ 0,    1,     1 ]   <- matrix[1]
+    matrix = []
+    for folder in folders:                      # cada pasta vira uma LINHA
+        linha = []
+        for class_name in classes:              # cada classe vira uma COLUNA
+            quantidade = 0
+            for photo in resultados:
+                if photo_in_folder(photo, folder):
+                    for detection in resultados[photo]:
+                        if detection[0] == class_name:
+                            quantidade += 1
+            linha.append(quantidade)
+        matrix.append(linha)
+    return matrix
+
+
+def find_highest(matrix, folders, classes):
+    # Procura a combinação (pasta, classe) com o maior valor (sem usar função pronta de máximo).
+    # Usa o mesmo padrão do "campeão" do Módulo 1.
+    if len(folders) == 0 or len(classes) == 0:
+        return None
+
+    best_folder = folders[0]
+    best_class = classes[0]
+    best_value = matrix[0][0]                   # começa supondo que o primeiro é o maior
+
+    for i in range(len(folders)):
+        for j in range(len(classes)):
+            if matrix[i][j] > best_value:       # ">" (e não ">=") mantém o primeiro em caso de empate
+                best_value = matrix[i][j]
+                best_folder = folders[i]
+                best_class = classes[j]
+
+    return best_folder, best_class, best_value
+
+
+def print_line(tamanho):
+    for i in range(tamanho):
+        print("-", end="")
+    print()
+
+
+def print_matrix(matrix, folders, classes):
+
+    largura = 15 + 12 * (len(folders) + 1)
+
+    print("\n--- Matriz pasta x classe ---")
+    print(f"{'Pasta':<15}", end="")
+    for folder in folders:
+        print(f"{folder:>12}", end="")    # :>{coluna} = alinha à direita na largura da coluna
+    print(f"{'Total':>12}")
+    print_line(largura)
+
+    folder_total = []                          # um total para cada linha, começando em 0
+    for folder in folders:
+        folder_total.append(0)
+
+    total_geral = 0
+    for j in range(len(classes)):
+        print(f"{classes[j]:<15}", end="")      # :<15 = alinha à esquerda em 15 espaços
+        class_total = 0
+        for i in range(len(folders)):
+            value = matrix[i][j]
+            print(f"{value:>12}", end="")
+            class_total += value                  # soma da linha
+            folder_total[i] += value           # soma da coluna
+        print(f"{class_total:>12}")
+        total_geral += class_total
+
+    print_line(largura)
+    print(f"{'Total':<15}", end="")
+    for total in folder_total:
+        print(f"{total:>12}", end="")
+    print(f"{total_geral:>12}")
+
+    best = find_highest(matrix, folders, classes)
+    if best is not None:
+        print(f"\nMaior valor: classe '{best[1]}' na pasta '{best[0]}' ({best[2]})")
+
+
+# ---------------------------------------------------------------
+# REQUISITO 8: histograma em texto
+# ---------------------------------------------------------------
+
+def show_histogram(ranking):
+    # Um # por unidade, na ordem do ranking (que já vem ordenado).
+    print("\n--- Histograma (ordem do ranking) ---")
+    if len(ranking) == 0:
+        print("Nenhuma detecção para mostrar.")
+    for item in ranking:
+        class_name = item[0]                    # item = tupla (classe, quantidade)
+        quantidade = item[1]
+        print(f"{class_name:<15}|", end="")
+        for i in range(quantidade):                 # laço de dentro: um # por objeto
+            print("#", end="")
+        print(f" ({quantidade})")
+
+
+# ---------------------------------------------------------------
+# REQUISITO 9: relatório em arquivo (report.txt)
+# ---------------------------------------------------------------
+
+def save_report(inventario, ranking, confianca_minima, nome_arquivo="report.txt"):
+    # open(nome, "w") = abre para ESCREVER (cria o arquivo; se já existe, apaga e escreve de novo)
+    # try/except = tenta executar; se der erro de arquivo, cai no except em vez de fechar o programa
+    # O relatório também registra a confiança mínima usada, para saber de onde vieram os números.
+    try:
+        arquivo = open(nome_arquivo, "w", encoding="utf-8")
+
+        arquivo.write("RELATÓRIO PHOTOCENSUS - GRUPO 06\n")      # \n = pular linha
+        arquivo.write(f"Confiança mínima usada: {confianca_minima}\n\n")
+
+        arquivo.write("INVENTÁRIO (classe: quantidade)\n")
+        for class_name in inventario:
+            arquivo.write(f"{class_name}: {inventario[class_name]}\n")
+
+        arquivo.write("\nRANKING (posição. classe - quantidade)\n")
+        posicao = 1
+        for item in ranking:
+            arquivo.write(f"{posicao}. {item[0]} - {item[1]}\n")
+            posicao += 1
+
+        arquivo.close()                            # fecha o arquivo (garante que tudo foi gravado)
+        print(f"Relatório salvo em {nome_arquivo}")
+        return True
+    except OSError:
+        print("Não foi possível salvar o relatório.")
+        return False
+
+
+def read_report(nome_arquivo="report.txt"):
+    # open(nome, "r") = abre para LER. Se o arquivo não existe, dá FileNotFoundError.
+    try:
+        arquivo = open(nome_arquivo, "r", encoding="utf-8")
+        conteudo = arquivo.read()                   # .read() = lê o arquivo inteiro como um texto
+        arquivo.close()
+        print(f"\n--- Conteúdo de {nome_arquivo} ---")
+        print(conteudo)
+        return True
+    except FileNotFoundError:
+        print("Ainda não existe relatório salvo. Salve um primeiro.")
+        return False
+
+
+# ===============================================================
+# 4. MÓDULO 1: funcionalidades reescritas com as novas estruturas
+# ===============================================================
+
+
+def analyze_photo(resultados, photo):
+    # Analisar uma foto: total de objetos, objeto principal e maior confiança
+    detections = resultados[photo]
+    total = len(detections)
+
+    print(f"\nFoto: {photo}")
+    print(f"Total de objetos: {total}")
+    if total > 0:
+        main_class = detections[0][0]           # começa supondo que o primeiro é o principal
+        maior_confianca = detections[0][1]
+        for detection in detections:
+            if detection[1] > maior_confianca:
+                maior_confianca = detection[1]
+                main_class = detection[0]
+        print(f"Objeto principal: {main_class}")
+        print(f"Maior confiança: {maior_confianca * 100:.0f}%")
+    else:
+      print("Nenhum objeto acima da confiança mínima")
+
+def count_class_in_photo(resultados, photo, class_name):
+    quantidade = 0
+    for detection in resultados[photo]:
+        if detection[0] == class_name:
+            quantidade += 1
+
+    print(f"\nFoto: {photo}")
+    if quantidade > 0:
+        print(f"Classe {class_name} encontrada! Quantidade: {quantidade}")
+    else:
+        print(f"Classe {class_name} não encontrada nesta foto.")
+
+
+def folder_report(resultados, folder):
+    photos = photos_of_folder(resultados, folder)
+
+    total_objects = 0       # acumulador: soma os objetos de todas as fotos
+    empty_photos = 0        # contador: quantas fotos ficaram com 0 objetos
+
+    print(f"\n--- Relatório da pasta {folder} ---")
+    for numero in range(1, len(photos) + 1):
+        objects = len(resultados[photos[numero - 1]])
+        print(f"Foto {numero}: {objects} objeto(s)")
+        total_objects += objects
+        if objects == 0:
+            empty_photos += 1
+
+    if len(photos) > 0:                         # só divide se a pasta tiver fotos
+        media = total_objects / len(photos)
+    else:
+        media = 0
+    print(f"Total de objetos: {total_objects}")
+    print(f"Média por foto: {media:.2f}")
+    print(f"Fotos sem objetos: {empty_photos}")
+
+
+def fullest_and_emptiest(resultados, folder):
+    photos = photos_of_folder(resultados, folder)
+    if len(photos) > 0:
+        # começamos supondo que a foto 1 é a mais cheia e a mais vazia
+        primeira_contagem = len(resultados[photos[0]])
+        numero_mais_cheia = 1
+        contagem_mais_cheia = primeira_contagem
+        numero_mais_vazia = 1
+        contagem_mais_vazia = primeira_contagem
+
+        for numero in range(2, len(photos) + 1):
+            objects = len(resultados[photos[numero - 1]])
+            if objects > contagem_mais_cheia:
+                contagem_mais_cheia = objects
+                numero_mais_cheia = numero
+            if objects < contagem_mais_vazia:
+                contagem_mais_vazia = objects
+                numero_mais_vazia = numero
+
+        print(f"\n--- Pasta {folder} ---")
+        print(f"Foto mais cheia: {numero_mais_cheia} com {contagem_mais_cheia} objeto(s)")
+        print(f"Foto mais vazia: {numero_mais_vazia} com {contagem_mais_vazia} objeto(s)")
+    else:
+      print("Nenhuma foto encontrada na pasta.")
+
+def search_class_in_folder(resultados, folder, class_name):
+    photos = photos_of_folder(resultados, folder)
+
+    photos_with_class = 0       # contador: em quantas fotos a classe aparece
+    total_encontrados = 0             # acumulador: total de objetos dessa classe
+
+    for photo in photos:
+        encontrados = 0
+        for detection in resultados[photo]:
+            if detection[0] == class_name:
+                encontrados += 1
+        total_encontrados += encontrados
+        if encontrados > 0:
+            photos_with_class += 1
+
+    porcentagem = 0
+    if len(photos) > 0:
+        porcentagem = photos_with_class / len(photos) * 100
+
+    print(f"\nClasse {class_name} na pasta {folder}:")
+    print(f"Aparece em {photos_with_class} de {len(photos)} fotos")
+    print(f"Total encontrado: {total_encontrados}")
+    print(f"Fotos com a classe: {porcentagem:.1f}%")
+
+
+def bar_chart(resultados, folder):
+    photos = photos_of_folder(resultados, folder)
+
+    print(f"\n--- Gráfico de barras da pasta {folder} ---")
+    for numero in range(1, len(photos) + 1):         # laço de fora: cada foto
+        objects = len(resultados[photos[numero - 1]])
+        nome_arquivo = f"{folder}_{numero:02d}"
+        print(f"{nome_arquivo:<15}|", end="")
+        for i in range(objects):                     # laço de dentro: um # por objeto
+            print("#", end="")
+        print(f"({objects})")
+
+
+# ===============================================================
+# 5. MENU E main()
+# ===============================================================
+
+
+def show_menu(confianca_minima, current_folder):
+    print("\n===== PHOTOCENSUS - GRUPO 06 =====")
+    print(f"Confiança mínima: {confianca_minima} | Pasta atual: {current_folder}")
+    print("--- Configurações ---")
+    print(" 1 - Definir confiança mínima")
+    print(" 2 - Trocar de pasta")
+    print("--- Módulo 1 (pasta atual) ---")
+    print(" 3 - Analisar uma foto")
+    print(" 4 - Contar uma classe em uma foto")
+    print(" 5 - Relatório da pasta")
+    print(" 6 - Foto mais cheia e mais vazia")
+    print(" 7 - Buscar uma classe na pasta")
+    print(" 8 - Gráfico de barras da pasta")
+    print("--- Módulo 2 (acervo) ---")
+    print(" 9 - Inventário")
+    print("10 - Ranking Top N")
+    print("11 - Busca reversa de uma classe")
+    print("12 - Comparar duas pastas")
+    print("13 - Matriz pasta x classe")
+    print("14 - Histograma")
+    print("15 - Salvar relatório")
+    print("16 - Ler relatório")
+    print(" 0 - Sair")
+    print("====================================")
 
 
 def main():
+    print("PhotoCensus - Grupo 06")
 
+    # Requisito 1: carga do acervo (uma única vez)
+    folders = list_folders()                    # 🔌 do kit
+    resultados = load_collection(folders)
+    show_summary(folders, resultados)
 
-    print("PhotoCensus - Group 06")
+    confianca_minima = 0.5
+    # Tudo abaixo respeita a confiança mínima (requisito 2)
+    filtrados, inventario, indice_reverso, ranking = rebuild(resultados, confianca_minima)
 
-    # Confiança mínima usada em todas as opções (começa em 0.5)
-    min_confidence = 0.5
+    current_folder = ask_folder(folders, "Escolha a pasta de trabalho: ")
+    opcao = ""
 
-    # Começa diferente de "0" para o laço rodar pelo menos uma vez
-    option = ""
+    while opcao != "0":
+        show_menu(confianca_minima, current_folder)
+        opcao = input("Escolha uma opção: ").strip()
 
-    # while = repete o bloco abaixo enquanto a condição for verdadeira
-    while option != "0":
-
-        show_menu(min_confidence)
-
-        option = input("Choose an option: ").strip()
-
-        # escolhe o que fazer conforme a opção digitada
-
-        if option == "0":
-            print("Goodbye!")
-        elif option == "1":
-            # Requisito 3: alterar a confiança mínima
-            min_confidence = ask_confidence()
-            print(f"Minimum confidence set to {min_confidence}")
-
-        elif option == "2":
-
-            # Requisito 4: analisar uma foto
-            folder = ask_folder()
-            number = ask_photo_number(folder)
-            photo = photo_name(folder, number)
-            total_objects = count_objects(photo, min_confidence)
-            # Renomeados para evitar conflito com as funções importadas
-            detected_main_object = main_object(photo)
-            detected_max_confidence = max_confidence(photo)
-
-            print(f"\nPhoto: {photo}")
-            print(f"Total objects: {total_objects}")
-            print(f"Main object: {detected_main_object}")
-            # :.0f = mostra o número sem casas decimais (0.89 * 100 -> 89)
-            print(f"Highest confidence: {detected_max_confidence * 100:.0f}%")
-
-        elif option == "3":
-            # Contar quantos objetos de uma classe ha na foto
-            folder = ask_folder()   # escolhe a pasta
-            number = ask_photo_number(folder)  # escolhe o numero da foto
-            photo = photo_name(folder, number)  # monta o caminho da foto
-
-            print(f"\nPhoto: {photo}")
-
-            classe_name = input("Enter a classe: ").strip().lower()
-            # count_class devolve quantos objetos dessa classe a foto tem
-            found = count_class(photo, classe_name, min_confidence)
-                                           # maior que 0 = a classe aparece
-            if found > 0:
-                print(f"Class {classe_name} found! Quantity: {found}")
-            else:
-                print(f"Class {classe_name} not found in this photo. ")
-
-        elif option == "4":
-            # relatorio da pasta (for + acumuladores)
-            folder = ask_folder()
-            amount = total_photos(folder)
-
-            total_objects = 0  # acumulador: soma os objetos de todas as fotos
-            empty_photos = 0   # contador: quantas fotos ficaram com 0 objetos
-
-            print(f"\n--- Report of folder {folder} ---")
-
-            # range(1, amount + 1) vai de 1 até amount (o ultimo é excluido)
-            for number in range(1, amount + 1):
-                photo = photo_name(folder, number)
-                objects = count_objects(photo, min_confidence)
-                print(f"Photo {number}: {objects} object(s)")
-
-                total_objects += objects   # soma os objetos
-                if objects == 0:
-                    empty_photos += 1      # conta a foto vazia
-
-            # Média = total / numero de fotos (só divide se a pasta tiver fotos, para não dividir por zero)
-            if amount > 0:
-                average = total_objects / amount
-            else:
-                average = 0
-            print(f"Total objects: {total_objects}")
-            print(f"Average per photo: {average:.2f}")
-            print(f"Photos with no objects: {empty_photos}")
-
-        elif option == "5":
-            # foto mais cheia e mais vazia
-            folder = ask_folder()
-            amount = total_photos(folder)
-
-            if amount > 0:
-                # começamos supondo que a foto 1 é a mais cheia e a mais vazia
-                first_photo = photo_name(folder, 1)
-                first_count = count_objects(first_photo, min_confidence)
-                fullest_number = 1
-                fullest_count = first_count
-                emptiest_number = 1
-                emptiest_count = first_count
-
-                # comparamos da foto 2 ate a ultima com os "campeões" atuais
-                for number in range(2, amount + 1):
-                    photo = photo_name(folder, number)
-                    objects = count_objects(photo, min_confidence)
-
-                    if objects > fullest_count:   # achou uma mais cheia
-                        fullest_count = objects
-                        fullest_number = number
-
-                    if objects < emptiest_count:   # achou uma mais vazia
-                        emptiest_count = objects
-                        emptiest_number = number
-
-                print(f"\n--- Folder {folder} ---")
-                print(f"Fullest photo: {fullest_number} with {fullest_count} object(s)")
-                print(f"Emptiest photo: {emptiest_number} with {emptiest_count} object(s)")
-            else:
-                print("No photos found in folder.")
-
-        elif option == "6":
-            # procurar uma classe na pasta
-            folder = ask_folder()
-            classe_name = input("Enter a class: ").strip().lower()
-            amount = total_photos(folder)  # quantas fotos a pasta tem
-
-            photos_with_class = 0    # contador: em quantas fotos a classe aparece
-            total_found = 0          # acumulador: total de objetos dessa classe
-
-            for number in range(1, amount + 1):
-                photo = photo_name(folder, number)
-                # quantos objetos da classe essa foto tem
-                found = count_class(photo, classe_name, min_confidence)
-                total_found += found   # soma no total geral
-
-                if found > 0:          # a classe apareceu nessa foto
-                    photos_with_class += 1   # conta mais uma foto
-
-            print(f"\nClass '{classe_name}' found in {photos_with_class} photo(s). Total occurrences: {total_found}")
-
-            # porcentagem de fotos da pasta em que a classe aparece
-            percent = 0
-            if amount > 0:
-                percent = photos_with_class / amount * 100
-            print(f"Percentage of photos with the class: {percent:.1f}%")
-
-        elif option == "7":
-            # grafico de barras em texto (laços aninhados)
-            folder = ask_folder()
-            amount = total_photos(folder)    # quantas fotos a pasta tem
-
-            print(f"\n--- Bar chart of folder {folder} ---")
-            for number in range(1, amount + 1):     # laço de fora: cada foto
-                photo = photo_name(folder, number)
-                objects = count_objects(photo, min_confidence)
-
-                # nome da foto: pasta + "_" + numero com 2 digitos (ex: street_04)
-                file_name = f"{folder}_{number:02d}"
-                print(f"{file_name:<15}|", end="")   # começa a linha sem pular
-
-                for i in range(objects):      # laço de dentro: 1 # por objeto
-                    print("#", end="")
-                print(f"({objects})")         # termina a linha com o total
+        if opcao == "0":
+            print("Até logo!")
+        elif opcao == "1":
+            confianca_minima = ask_confidence()
+            filtrados, inventario, indice_reverso, ranking = rebuild(resultados, confianca_minima)
+            print(f"Confiança mínima definida: {confianca_minima}")
+        elif opcao == "2":
+            current_folder = ask_folder(folders, "Escolha a pasta de trabalho: ")
+        elif opcao == "3":
+            photo = choose_photo(filtrados, current_folder)
+            if photo is not None:                # None = pasta sem fotos (já avisou o usuário)
+                analyze_photo(filtrados, photo)
+        elif opcao == "4":
+            photo = choose_photo(filtrados, current_folder)
+            if photo is not None:
+                count_class_in_photo(filtrados, photo, ask_class(filtrados))
+        elif opcao == "5":
+            folder_report(filtrados, current_folder)
+        elif opcao == "6":
+            fullest_and_emptiest(filtrados, current_folder)
+        elif opcao == "7":
+            search_class_in_folder(filtrados, current_folder, ask_class(filtrados))
+        elif opcao == "8":
+            bar_chart(filtrados, current_folder)
+        elif opcao == "9":
+            folder = ask_folder_all(folders)
+            show_inventory(build_inventory(filtrados, folder), folder)
+        elif opcao == "10":
+            top_n_option(ranking)
+        elif opcao == "11":
+            search_class(indice_reverso, filtrados, ask_class(filtrados))
+        elif opcao == "12":
+            folder_a = ask_folder(folders, "Primeira pasta: ")
+            folder_b = ask_folder(folders, "Segunda pasta: ")
+            show_comparison(filtrados, folder_a, folder_b)
+        elif opcao == "13":
+            classes = list_classes(filtrados)
+            print_matrix(build_matrix(filtrados, folders, classes), folders, classes)
+        elif opcao == "14":
+            show_histogram(ranking)
+        elif opcao == "15":
+            save_report(inventario, ranking, confianca_minima)
+        elif opcao == "16":
+            read_report()
         else:
-            # Qualquer outro texto é uma opção inválida
-            print("Invalid option! Try again.")
+            print("Opção inválida! Tente de novo.")
 
 
 # Só executa main() quando o arquivo é rodado diretamente (não quando é importado)
