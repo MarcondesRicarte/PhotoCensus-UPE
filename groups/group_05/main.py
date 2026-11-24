@@ -161,47 +161,132 @@ def show_bar_chart(folder, confidence): #requisito 9
 
         print(f"{folder}_{photo_number} | {chart} ({total_objects})")
 
-#=================== MÓDULO-2 REQUISITOS ==============================================
+#modulo2 requisitos
 
 def collection_results():  #requisito 1
-    # carrega todas as fotos e mostra um resumo do acervo
-    results = {} #dicionario que armazena todas as fotos
+    # detecções, armazenamento de resultados e resumo
+    results = {}
+
     folders = list_folders()
+
+    folder_count = 0
+    photo_count = 0
     detection_count = 0
 
     for folder in folders:
-        for photo in list_photos(folder):        
-            results[photo] = detect(photo)
-            detection_count += len(results[photo])
-            
+        folder_count += 1
+
+        photos = list_photos(folder)
+
+        for photo in photos:
+            photo_count += 1
+            detections = detect(photo)
+            results[photo] = detections
+            detection_count += len(detections)
+
     print("\n--- ACERVO ---")
-    print(f"Pastas: {len(folders)}")
-    print(f"fotos: {len(results)}")
+    print(f"Pastas: {folder_count}")
+    print(f"Fotos: {photo_count}")
     print(f"Detecções: {detection_count}")
+
     return results
 
-def filter_detections(photo, confidence):  #requisito 2 (refazer)
+def filter_detections(detections, confidence):  #requisito 2
     #filtro de confiança, filtra os resultados de acordo com a confiança escolhida.
     filtered = []
-    detections = detect(photo)
-    for class_name, score in detections: #itera cada tupla da lista e comprara a confiança
+
+    for class_name, score in detections:
         if score >= confidence:
             filtered.append((class_name, score))
 
     return filtered
 
-def build_inventory(confidence, photos): #requisito 3 (refazer)
-    inventory = {}
+def create_inventory(results, confidence, folder = None): #re3
+  inventory = {}
 
-    for photo in photos:
-        filtered = filter_detections(photo, confidence)
+  for photo, detections in results.items():
 
-        for class_name in filtered:
-            if class_name in inventory:
-                inventory[class_name] +=1
-            else:
-                inventory[class_name] = 1
+    if folder is None or os.path.basename(os.path.dirname(photo)) == folder:
+      filtered = filter_detections(detections, confidence)
+      for class_name, score in filtered:
+        if class_name in inventory: 
+          inventory[class_name] += 1
+        else:
+          inventory[class_name] = 1
+
+def show_inventory(inventory): #re3
+    print("\n=== INVENTÁRIO DE CLASSES ===")
+
+    if len(inventory) == 0:
+        print("Nenhuma detecção encontrada.")
+        return
+
+    for class_name, amount in inventory.items():
+        print(f"{class_name}: {amount}")
+
     return inventory
+
+def create_ranking(inventory, limit): #re4
+  ranking = []
+
+  for class_name, amount in inventory.items():
+    ranking.append((class_name, amount))
+
+  for a in range(len(ranking)):
+    for b in range(len(ranking) - 1 - a):
+      if ranking[b][1] < ranking[b + 1][1]:
+        ranking[b], ranking[b + 1] = ranking[b + 1], ranking[b]
+
+  ranking = ranking[:limit]
+  return ranking
+
+def show_ranking(ranking): #re4
+  print("\n===RANKING DE CLASSES===")
+  if len(ranking) == 0:
+    print("Nenhuma classe encontrada.")
+    return
+  
+  position = 1
+
+  for class_name, amount in ranking:
+    print(f"{position}º - {class_name}: {amount}")
+    position += 1
+
+def ranking_analysis(confidence, results):
+ 
+    print("\n1 - Ranking geral")
+    print("2 - Ranking de uma pasta")
+
+    option = input("Escolha uma opção: ")
+
+    if option == "1":
+        inventory = create_inventory(results, confidence)
+
+    elif option == "2":
+        folder = choose_folder()
+        inventory = create_inventory(results, confidence, folder)
+
+    else:
+        print(MSG_INVALID)
+        return
+
+    # Pergunta quantas posições o ranking deve mostrar
+    while True:
+        try:
+            limit = int(input("Quantas posições deseja mostrar? "))
+
+            if limit > 0:
+                break
+
+            print(MSG_INVALID)
+
+        except ValueError:
+            print(MSG_INVALID)
+
+    # Cria e mostra o ranking
+    ranking = create_ranking(inventory, limit)
+    show_ranking(ranking)
+
 
 #Menus
 def show_menu(confidence): #menu principal
@@ -210,7 +295,6 @@ def show_menu(confidence): #menu principal
     print('1 - Configurar a confiança mínima')
     print('2 - Analisar uma foto')
     print('3 - Analisar uma pasta')
-    print('4 - Carga de Acervo')
     print('0 - Sair')
     return input("Escolha uma opção: ")
 
@@ -276,8 +360,6 @@ def main():
             analyze_photo(confidence)
         elif option == "3":
             analyze_folder(confidence)
-        elif option == "4":
-            collection_results()
         elif option == "0":
             break
         else:
@@ -287,3 +369,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#teste atualiz
