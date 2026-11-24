@@ -75,3 +75,42 @@ def build_inventory(results, min_conf, target_folder=""):
                     inventory[class_name] = 1
 
     return inventory
+# ==========================================
+#    REVERSE INDEX & FOLDER SEARCH
+# ==========================================
+def build_reverse_index(results, min_conf):
+    """
+    Build a {class_name: [photos]} dictionary filtered by min_conf, with no duplicate photos.
+    """
+
+    reverse_index = {}  
+
+    for photo, detections in results.items():
+        filtered = filter_detections(detections, min_conf)
+
+        for class_name, _ in filtered:
+    
+            if class_name in reverse_index:
+                if photo not in reverse_index[class_name]:
+                    reverse_index[class_name] += [photo]
+            
+            else:
+                reverse_index[class_name] = [photo]
+    return reverse_index
+
+
+def search_class_in_folder(folder, class_name, min_conf):
+    results_class_in_folder = {}
+    for photo in list_photos(folder):
+        results_class_in_folder[photo] = detect(photo)
+
+    reverse_index = build_reverse_index(results_class_in_folder, min_conf)
+    photos = reverse_index.get(class_name, [])
+
+    if photos:
+        print(f"Photos with {class_name} in folder {folder}:")
+        for photo in photos:
+            print(f"- {photo}")
+    else:
+        print(f"No photos with {class_name} found in folder{folder}.")
+
