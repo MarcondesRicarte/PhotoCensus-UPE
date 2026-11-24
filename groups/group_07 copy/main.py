@@ -13,604 +13,769 @@ sys.path.append(os.path.join(GROUP_DIR, "..", "..", "kit"))
 from black_box import *  # noqa: E402,F401,F403
 
 
-def main():
-    print("PhotoCensus - Group 07")
-
-# ---------- ENTRADAS ----------
-
-def ask_int_in_range(prompt, low, high):
-    """Repete até o usuário digitar um inteiro entre low e high."""
-    while True:
-        text = input(prompt).strip()
-        if text.lstrip("-").isdigit() and low <= int(text) <= high:
-            return int(text)
-        print(f"Número inválido. Digite um número inteiro de {low} a {high}.")
 
 
-def ask_class_name():
-    """Pede o nome de uma classe (não aceita vazio)."""
-    show_classes()
-    name = input(CLASS_PROMPT).strip().lower()
-    while not name:
-        print("Você não digitou nada. Tente novamente.")
-        name = input(CLASS_PROMPT).strip().lower()
-    return name
 
+
+
+# ==================== ENTRADAS ====================
 
 def ask_folder():
     show_folders()
-    while True:
-        folder = input(FOLDER_PROMPT).strip()
-        if folder and folder_exists(folder) and total_photos(folder) > 0:
-            return folder
-        print("Pasta inválida. Tente novamente.")
+    pasta_valida = False
+    nome_pasta = ""
+
+    while not pasta_valida:
+        nome_pasta = input("Informe a pasta desejada (ex: animals, sports, street): ").strip()
+
+        if nome_pasta == "":
+            print("Erro: o nome da pasta não pode ficar em branco.")
+        elif not folder_exists(nome_pasta):
+            print("Erro: essa pasta não foi encontrada.")
+        elif total_photos(nome_pasta) == 0:
+            print("Erro: a pasta escolhida não possui fotos válidas.")
+        else:
+            pasta_valida = True
+
+    return nome_pasta
 
 
 def ask_photo():
-    folder = ask_folder()
-    total = total_photos(folder)
-    print(f"A pasta '{folder}' tem {total} fotos.")
-    number = ask_int_in_range(f"Escolha o número da foto (1 a {total}): ", 1, total)
-    return photo_name(folder, number)
+    diretorio = ask_folder()
+    qtd_imagens = total_photos(diretorio)
+    print(f"Total de imagens disponíveis em '{diretorio}': {qtd_imagens}")
+
+    indice_valido = False
+    indice_escolhido = 0
+
+    while not indice_valido:
+        entrada = input(f"Digite o número da imagem (de 1 até {qtd_imagens}): ").strip()
+
+        try:
+            indice_escolhido = int(entrada)
+            if 1 <= indice_escolhido <= qtd_imagens:
+                indice_valido = True
+            else:
+                print(f"Fora do intervalo! Escolha um valor entre 1 e {qtd_imagens}.")
+        except ValueError:
+            print("Entrada inválida! Digite apenas números inteiros.")
+
+    return photo_name(diretorio, indice_escolhido)
 
 
-# ---------- CARGA, FILTRO E INVENTÁRIO ----------
+def pedir_classe(mensagem):
+    show_classes()
+    nome_classe = ""
 
-def load_collection():
-    results = {}
-    folder_photos = {}
-    for folder in list_folders():
-        photos = list_photos(folder)
-        folder_photos[folder] = photos
-        for photo in photos:
-            results[photo] = detect(photo)
-    return results, folder_photos
+    while nome_classe == "":
+        nome_classe = input(mensagem).strip().lower()
+        if nome_classe == "":
+            print("O nome da classe não pode ser vazio.")
 
-
-def filter_detections(detections, min_conf):
-    return [d for d in detections if d[1] >= min_conf]
+    return nome_classe
 
 
-def show_summary(results, folder_photos, min_conf):
-    all_count = 0
-    kept_count = 0
-    for photo, dets in results.items():
-        all_count += len(dets)
-        kept_count += len(filter_detections(dets, min_conf))
+def pedir_inteiro(mensagem, minimo, maximo):
+    valor_valido = False
+    numero = 0
+
+    while not valor_valido:
+        entrada = input(mensagem).strip()
+
+        try:
+            numero = int(entrada)
+            if minimo <= numero <= maximo:
+                valor_valido = True
+            else:
+                print(f"Fora do intervalo! Escolha um valor entre {minimo} e {maximo}.")
+        except ValueError:
+            print("Entrada inválida! Digite apenas números inteiros.")
+
+    return numero
+
+
+# ==================== CARGA, FILTRO E INVENTÁRIO ====================
+
+def carregar_acervo():
+    resultados = {}
+    fotos_por_pasta = {}
+
+    for pasta in list_folders():
+        fotos_por_pasta[pasta] = list_photos(pasta)
+
+        for foto in fotos_por_pasta[pasta]:
+            resultados[foto] = detect(foto)
+
+    return resultados, fotos_por_pasta
+
+
+def filtrar_deteccoes(deteccoes, limiar):
+    aprovadas = []
+
+    for nome_classe, confianca in deteccoes:
+        if confianca >= limiar:
+            aprovadas.append((nome_classe, confianca))
+
+    return aprovadas
+
+
+def exibir_resumo(resultados, fotos_por_pasta, limiar):
+    total_bruto = 0
+    total_filtrado = 0
+
+    for foto in resultados:
+        total_bruto += len(resultados[foto])
+        total_filtrado += len(filtrar_deteccoes(resultados[foto], limiar))
 
     print("\n--- Resumo do acervo ---")
-    print(f"Pastas: {len(folder_photos)}")
-    print(f"Fotos: {len(results)}")
-    print(f"Detecções (a partir de 0.25): {all_count}")
-    print(f"Detecções com confiança >= {min_conf}: {kept_count}")
+    print(f"Pastas: {len(fotos_por_pasta)}")
+    print(f"Fotos: {len(resultados)}")
+    print(f"Detecções (a partir de 0.25): {total_bruto}")
+    print(f"Detecções com confiança >= {limiar}: {total_filtrado}")
 
 
-def build_inventory(results, photos, min_conf):
-    inventory = {}
-    for photo in photos:
-        for name, _ in filter_detections(results[photo], min_conf):
-            inventory[name] = inventory.get(name, 0) + 1
-    return inventory
+def montar_inventario(resultados, lista_fotos, limiar):
+    inventario = {}
+
+    for foto in lista_fotos:
+        for nome_classe, confianca in filtrar_deteccoes(resultados[foto], limiar):
+            if nome_classe in inventario:
+                inventario[nome_classe] += 1
+            else:
+                inventario[nome_classe] = 1
+
+    return inventario
 
 
-def show_inventory(inventory, title):
-    print(f"\n--- Inventário: {title} ---")
-    if not inventory:
+def exibir_inventario(inventario, titulo):
+    print(f"\n--- Inventário: {titulo} ---")
+
+    if len(inventario) == 0:
         print("Nenhum objeto com essa confiança mínima.")
         return
 
     total = 0
-    for name, amount in inventory.items():
-        print(f"{name}: {amount}")
-        total += amount
+    for nome_classe in inventario:
+        print(f"{nome_classe}: {inventario[nome_classe]}")
+        total += inventario[nome_classe]
 
-    print(f"\nClasses distintas: {len(inventory)}")
+    print(f"\nClasses distintas: {len(inventario)}")
     print(f"Total de objetos: {total}")
 
 
-def build_ranking(results, min_conf):
-    """Inventário do acervo inteiro já ordenado do maior para o menor."""
-    inventory = build_inventory(results, list(results), min_conf)
-    return inventory, sort_desc(list(inventory.items()))
+# ==================== ORDENAÇÃO  ====================
+
+def inventario_para_lista(inventario):
+    itens = []
+
+    for nome_classe in inventario:
+        itens.append((nome_classe, inventario[nome_classe]))
+
+    return itens
 
 
-# ---------- ORDENAÇÃO (sem sorted/.sort) ----------
+def ordenar_decrescente(itens):
+    # Bubble sort em uma cópia, do maior para o menor.
+    ranking = itens[:]
+    n = len(ranking)
 
-def sort_desc(items):
-    """Insertion sort decrescente pela quantidade (estável)."""
-    ranking = list(items)
-    for i in range(1, len(ranking)):
-        current = ranking[i]
-        j = i - 1
-        while j >= 0 and ranking[j][1] < current[1]:
-            ranking[j + 1] = ranking[j]
-            j -= 1
-        ranking[j + 1] = current
+    for i in range(n - 1):
+        for j in range(n - 1 - i):
+            if ranking[j][1] < ranking[j + 1][1]:
+                ranking[j], ranking[j + 1] = ranking[j + 1], ranking[j]
+
     return ranking
 
 
-def sort_names(names):
-    """Selection sort alfabético."""
-    remaining = list(names)
-    ordered = []
-    while remaining:
-        smallest = remaining[0]
-        for name in remaining:
-            if name < smallest:
-                smallest = name
-        remaining.remove(smallest)
-        ordered.append(smallest)
-    return ordered
+def ordenar_nomes(nomes):
+    # Insertion sort alfabético.
+    lista = list(nomes)
+
+    for i in range(1, len(lista)):
+        atual = lista[i]
+        j = i - 1
+
+        while j >= 0 and lista[j] > atual:
+            lista[j + 1] = lista[j]
+            j -= 1
+
+        lista[j + 1] = atual
+
+    return lista
 
 
-# ---------- BUSCA REVERSA E CONJUNTOS ----------
-
-def build_reverse_index(results, min_conf):
-    index = {}
-    for photo in results:
-        for name, _ in filter_detections(results[photo], min_conf):
-            photos_with_class = index.setdefault(name, [])
-            if photo not in photos_with_class:
-                photos_with_class.append(photo)
-    return index
+def montar_ranking(resultados, limiar):
+    inventario = montar_inventario(resultados, list(resultados), limiar)
+    ranking = ordenar_decrescente(inventario_para_lista(inventario))
+    return inventario, ranking
 
 
-def count_class_in(detections, class_name):
-    return len([1 for name, _ in detections if name == class_name])
+# ==================== BUSCA REVERSA E CONJUNTOS ====================
+
+def montar_indice_reverso(resultados, limiar):
+    indice = {}
+
+    for foto in resultados:
+        for nome_classe, confianca in filtrar_deteccoes(resultados[foto], limiar):
+            if nome_classe not in indice:
+                indice[nome_classe] = []
+
+            if foto not in indice[nome_classe]:
+                indice[nome_classe].append(foto)
+
+    return indice
 
 
-def classes_of_folder(results, folder_photos, folder, min_conf):
-    found = set()
-    for photo in folder_photos[folder]:
-        for name, _ in filter_detections(results[photo], min_conf):
-            found.add(name)
-    return found
+def contar_classe_em(deteccoes, alvo):
+    quantidade = 0
+
+    for nome_classe, confianca in deteccoes:
+        if nome_classe == alvo:
+            quantidade += 1
+
+    return quantidade
 
 
-def show_set(title, names):
-    ordered = sort_names(names)
-    text = ", ".join(ordered) if ordered else "nenhuma"
-    print(f"{title} ({len(ordered)}): {text}")
+def classes_da_pasta(resultados, fotos_por_pasta, pasta, limiar):
+    conjunto = set()
+
+    for foto in fotos_por_pasta[pasta]:
+        for nome_classe, confianca in filtrar_deteccoes(resultados[foto], limiar):
+            conjunto.add(nome_classe)
+
+    return conjunto
 
 
-# ---------- MATRIZ PASTA x CLASSE ----------
+def exibir_conjunto(titulo, nomes):
+    ordenados = ordenar_nomes(nomes)
 
-def build_matrix(results, folder_photos, min_conf, classes):
-    matrix = []
-    for folder in folder_photos:
-        inventory = build_inventory(results, folder_photos[folder], min_conf)
-        matrix.append([inventory.get(c, 0) for c in classes])
-    return matrix
-
-
-def matrix_totals(matrix):
-    row_totals = []
-    for row in matrix:
-        acc = 0
-        for value in row:
-            acc += value
-        row_totals.append(acc)
-
-    column_totals = [0] * len(matrix[0])
-    for row in matrix:
-        for j, value in enumerate(row):
-            column_totals[j] += value
-
-    return row_totals, column_totals
+    if len(ordenados) == 0:
+        print(f"{titulo} (0): nenhuma")
+    else:
+        print(f"{titulo} ({len(ordenados)}): " + ", ".join(ordenados))
 
 
-def find_largest(matrix, folders, classes):
-    best = (-1, "", "")
-    for i, row in enumerate(matrix):
-        for j, value in enumerate(row):
-            if value > best[0]:
-                best = (value, folders[i], classes[j])
-    return best
+# ==================== MATRIZ PASTA x CLASSE ====================
+
+def montar_matriz(resultados, fotos_por_pasta, limiar, classes):
+    matriz = []
+
+    for pasta in fotos_por_pasta:
+        inventario = montar_inventario(resultados, fotos_por_pasta[pasta], limiar)
+        linha = []
+
+        for nome_classe in classes:
+            if nome_classe in inventario:
+                linha.append(inventario[nome_classe])
+            else:
+                linha.append(0)
+
+        matriz.append(linha)
+
+    return matriz
 
 
-def print_matrix(folders, classes, matrix, row_totals, column_totals):
-    grand_total = 0
-    for t in row_totals:
-        grand_total += t
+def totais_da_matriz(matriz):
+    totais_linhas = []
+    for linha in matriz:
+        soma = 0
+        for valor in linha:
+            soma += valor
+        totais_linhas.append(soma)
 
-    block_size = 6
-    for start in range(0, len(classes), block_size):
-        end = min_of(start + block_size, len(classes))
-        is_last = end == len(classes)
+    totais_colunas = []
+    for j in range(len(matriz[0])):
+        soma = 0
+        for i in range(len(matriz)):
+            soma += matriz[i][j]
+        totais_colunas.append(soma)
 
-        header = f"{'Pasta':<14}"
-        for j in range(start, end):
-            header += f"{classes[j][:12]:>13}"
-        if is_last:
-            header += f"{'Total':>8}"
-
-        print("\n" + header)
-        print("-" * len(header))
-
-        for i, folder in enumerate(folders):
-            line = f"{folder:<14}"
-            for j in range(start, end):
-                line += f"{matrix[i][j]:>13}"
-            if is_last:
-                line += f"{row_totals[i]:>8}"
-            print(line)
-
-        footer = f"{'TOTAL':<14}"
-        for j in range(start, end):
-            footer += f"{column_totals[j]:>13}"
-        if is_last:
-            footer += f"{grand_total:>8}"
-        print(footer)
+    return totais_linhas, totais_colunas
 
 
-def min_of(a, b):
-    """Menor de dois valores (min() é proibido)."""
-    return a if a < b else b
+def maior_da_matriz(matriz, pastas, classes):
+    melhor_valor = -1
+    melhor_pasta = ""
+    melhor_classe = ""
+
+    for i in range(len(matriz)):
+        for j in range(len(matriz[i])):
+            if matriz[i][j] > melhor_valor:
+                melhor_valor = matriz[i][j]
+                melhor_pasta = pastas[i]
+                melhor_classe = classes[j]
+
+    return melhor_valor, melhor_pasta, melhor_classe
 
 
-# ---------- HISTOGRAMA E RELATÓRIO ----------
+def imprimir_matriz(pastas, classes, matriz, totais_linhas, totais_colunas):
+    total_geral = 0
+    for t in totais_linhas:
+        total_geral += t
 
-def print_histogram(ranking):
-    biggest = ranking[0][1]
-    step = 1
-    if biggest > 50:
-        step = -(-biggest // 50)  # divisão arredondada para cima
-        print(f"(cada # = {step} objetos)")
+    colunas_por_bloco = 6
 
-    for name, amount in ranking:
-        bars = amount // step or 1  # toda classe ganha ao menos um '#'
-        print(f"{name:<15}| {'#' * bars} ({amount})")
+    for inicio in range(0, len(classes), colunas_por_bloco):
+        fim = inicio + colunas_por_bloco
+        if fim > len(classes):
+            fim = len(classes)
+
+        ultimo_bloco = (fim == len(classes))
+
+        cabecalho = f"{'Pasta':<14}"
+        for j in range(inicio, fim):
+            cabecalho += f"{classes[j][:12]:>13}"
+        if ultimo_bloco:
+            cabecalho += f"{'Total':>8}"
+
+        print("\n" + cabecalho)
+        print("-" * len(cabecalho))
+
+        for i in range(len(pastas)):
+            linha = f"{pastas[i]:<14}"
+            for j in range(inicio, fim):
+                linha += f"{matriz[i][j]:>13}"
+            if ultimo_bloco:
+                linha += f"{totais_linhas[i]:>8}"
+            print(linha)
+
+        rodape = f"{'TOTAL':<14}"
+        for j in range(inicio, fim):
+            rodape += f"{totais_colunas[j]:>13}"
+        if ultimo_bloco:
+            rodape += f"{total_geral:>8}"
+        print(rodape)
 
 
-def save_report(inventory, ranking, min_conf, path):
-    lines = [
-        "PhotoCensus - Relatório do acervo",
-        f"Confiança mínima: {min_conf}",
-        "",
-        "INVENTÁRIO",
-    ]
-    for name, amount in inventory.items():
-        lines.append(f"{name}: {amount}")
+# ==================== HISTOGRAMA E RELATÓRIO ====================
 
-    lines.append("")
-    lines.append("RANKING")
-    for position, (name, amount) in enumerate(ranking, start=1):
-        lines.append(f"{position}. {name} - {amount}")
+def imprimir_histograma(ranking):
+    maior_barra = ranking[0][1]
+    valor_do_simbolo = 1
 
-    with open(path, "w", encoding="utf-8") as file:
-        file.write("\n".join(lines) + "\n")
+    if maior_barra > 50:
+        valor_do_simbolo = (maior_barra + 49) // 50
+        print(f"(cada # = {valor_do_simbolo} objetos)")
+
+    for nome_classe, quantidade in ranking:
+        tamanho = quantidade // valor_do_simbolo
+        if tamanho == 0:
+            tamanho = 1
+
+        print(f"{nome_classe:<15}| {'#' * tamanho} ({quantidade})")
 
 
-def read_report(path):
-    if not os.path.exists(path):
+def salvar_relatorio(inventario, ranking, limiar, caminho):
+    with open(caminho, "w", encoding="utf-8") as arquivo:
+        arquivo.write("PhotoCensus - Relatório do acervo\n")
+        arquivo.write(f"Confiança mínima: {limiar}\n\n")
+
+        arquivo.write("INVENTÁRIO\n")
+        for nome_classe in inventario:
+            arquivo.write(f"{nome_classe}: {inventario[nome_classe]}\n")
+
+        arquivo.write("\nRANKING\n")
+        posicao = 1
+        for nome_classe, quantidade in ranking:
+            arquivo.write(f"{posicao}. {nome_classe} - {quantidade}\n")
+            posicao += 1
+
+
+def ler_relatorio(caminho):
+    try:
+        with open(caminho, "r", encoding="utf-8") as arquivo:
+            conteudo = arquivo.read()
+    except FileNotFoundError:
         print("Ainda não existe relatório salvo. Use a opção de salvar primeiro.")
         return
-    with open(path, "r", encoding="utf-8") as file:
-        content = file.read()
+
     print("\n--- Conteúdo do relatório ---")
-    print(content)
+    print(conteudo)
 
 
-# ---------- OPÇÕES DO MENU ----------
+# ==================== MENU E PRINCIPAL ====================
 
-def set_confidence(results, folder_photos, current):
-    print("\n--- Configurar confiança mínima ---")
-    print(f"Nível de confiança atual: {current}")
+def exibir_menu():
+    print("\n========================================")
+    print("         PHOTOCENSUS - SISTEMA          ")
+    print("========================================")
+    print("[1]  Ajustar confiança mínima")
+    print("[2]  Inspecionar uma única foto")
+    print("[3]  Contar classe específica em uma foto")
+    print("[4]  Gerar relatório completo da pasta")
+    print("[5]  Buscar foto mais cheia e mais vazia")
+    print("[6]  Buscar classe específica na pasta")
+    print("[7]  Exibir gráfico de barras em texto")
+    print("[8]  Ranking Top N")
+    print("[9]  Busca reversa (classe -> fotos)")
+    print("[10] Comparar duas pastas")
+    print("[11] Matriz pasta x classe")
+    print("[12] Histograma do inventário")
+    print("[13] Salvar relatório (report.txt)")
+    print("[14] Ler relatório salvo")
+    print("[15] Inventário (acervo ou pasta)")
+    print("[0]  Encerrar programa")
+    print("========================================")
 
-    while True:
-        text = input("Digite o novo valor a ser atribuído à confiança: ")
-        text = text.strip().replace(",", ".")
+
+# ==================== OPÇÕES DO MENU ====================
+
+# Opção 1: devolve o novo valor da confiança mínima
+def ajustar_confianca(resultados, fotos_por_pasta, limiar_confianca):
+    print("\n=== Ajuste de Confiança Mínima ===")
+    print(f"Confiança configurada atualmente: {limiar_confianca}")
+
+    novo_limiar_ok = False
+    while not novo_limiar_ok:
+        texto_digitado = input("Novo valor de confiança (0.0 a 1.0): ").strip().replace(",", ".")
+
         try:
-            value = float(text)
+            valor_convertido = float(texto_digitado)
+            if 0.0 <= valor_convertido <= 1.0:
+                limiar_confianca = valor_convertido
+                novo_limiar_ok = True
+                print(f"Sucesso! Confiança atualizada para {limiar_confianca}")
+            else:
+                print("O valor precisa estar entre 0 e 1.")
         except ValueError:
-            print("Você digitou um valor errado. Por favor, digite um valor válido (entre 0 e 1).")
-            continue
+            print("Formato inválido. Digite um número decimal (ex: 0.65).")
 
-        if 0 <= value <= 1:
-            print("Valor aceito!")
-            break
-        print("Valor inválido, escolha um valor no intervalo de 0 a 1.")
-
-    print(f"Novo nível de confiança: {value}")
-    show_summary(results, folder_photos, value)
-    return value
+    exibir_resumo(resultados, fotos_por_pasta, limiar_confianca)
+    return limiar_confianca
 
 
-def analyze_photo(results, conf):
-    print("\n--- Analisar uma foto ---")
-    photo = ask_photo()
-    kept = filter_detections(results[photo], conf)
+# Opção 2
+def inspecionar_foto(limiar_confianca):
+    print("\n=== Inspeção de Foto ===")
+    caminho_img = ask_photo()
+    detectados = count_objects(caminho_img, limiar_confianca)
 
-    print(f"\nFoto: {photo}")
-    print(f"Objetos detectados (confiança >= {conf}): {len(kept)}")
+    print(f"\nArquivo analisado: {caminho_img}")
+    print(f"Quantidade de objetos (confiança mínima de {limiar_confianca}): {detectados}")
 
-    if kept:
-        main_name, main_conf = kept[0]
-        for name, c in kept:
-            if c > main_conf:
-                main_name, main_conf = name, c
-        print(f"Objeto principal: {main_name}")
-        print(f"Maior confiança: {main_conf * 100:.0f}%")
+    if detectados > 0:
+        obj_destaque = main_object(caminho_img)
+        maior_taxa = max_confidence(caminho_img) * 100
+        print(f"Objeto em destaque: {obj_destaque}")
+        print(f"Pico de confiança atingido: {maior_taxa:.0f}%")
     else:
+        print("Nenhum objeto atingiu o nível de confiança exigido.")
+
+
+# Opção 3
+def contar_classe_na_foto(limiar_confianca):
+    print("\n=== Contagem de Classe na Foto ===")
+    caminho_img = ask_photo()
+    nome_classe = pedir_classe("Qual classe deseja contar? ")
+
+    ocorrencias = count_class(caminho_img, nome_classe, limiar_confianca)
+    print(f"Classe pesquisada: [{nome_classe}]")
+    print(f"Total encontrado na imagem (confiança >= {limiar_confianca}): {ocorrencias}")
+
+
+# Opção 4
+def relatorio_da_pasta(limiar_confianca):
+    print("\n=== Relatório Completo da Pasta ===")
+    diretorio = ask_folder()
+    qtd_imagens = total_photos(diretorio)
+
+    soma_objetos = 0
+    imagens_sem_nada = 0
+    indice = 1
+
+    while indice <= qtd_imagens:
+        arquivo_atual = photo_name(diretorio, indice)
+        qtd_na_foto = count_objects(arquivo_atual, limiar_confianca)
+
+        print(f"Imagem {indice} -> {arquivo_atual}: {qtd_na_foto} objeto(s)")
+
+        soma_objetos += qtd_na_foto
+        if qtd_na_foto == 0:
+            imagens_sem_nada += 1
+
+        indice += 1
+
+    media_por_foto = soma_objetos / qtd_imagens
+    print("\n--- Resumo do Diretório ---")
+    print(f"Soma total de objetos: {soma_objetos}")
+    print(f"Média por imagem: {media_por_foto:.2f}")
+    print(f"Imagens vazias (0 objetos): {imagens_sem_nada}")
+
+
+# Opção 5
+def foto_mais_cheia_e_mais_vazia(limiar_confianca):
+    print("\n=== Foto Mais Cheia e Mais Vazia ===")
+    diretorio = ask_folder()
+    qtd_imagens = total_photos(diretorio)
+
+    # A primeira foto serve de base de comparação
+    primeira_img = photo_name(diretorio, 1)
+    qtd_inicial = count_objects(primeira_img, limiar_confianca)
+
+    img_mais_cheia = primeira_img
+    recorde_maior = qtd_inicial
+
+    img_mais_vazia = primeira_img
+    recorde_menor = qtd_inicial
+
+    for idx in range(2, qtd_imagens + 1):
+        img_atual = photo_name(diretorio, idx)
+        qtd_atual = count_objects(img_atual, limiar_confianca)
+
+        if qtd_atual > recorde_maior:
+            recorde_maior = qtd_atual
+            img_mais_cheia = img_atual
+
+        if qtd_atual < recorde_menor:
+            recorde_menor = qtd_atual
+            img_mais_vazia = img_atual
+
+    print(f"\nMais cheia: {img_mais_cheia} com {recorde_maior} objeto(s)")
+    print(f"Mais vazia: {img_mais_vazia} com {recorde_menor} objeto(s)")
+
+
+# Opção 6
+def buscar_classe_na_pasta(limiar_confianca):
+    print("\n=== Busca de Classe na Pasta ===")
+    diretorio = ask_folder()
+    qtd_imagens = total_photos(diretorio)
+    alvo = pedir_classe("Informe a classe para buscar na pasta: ")
+
+    fotos_positivas = 0
+    soma_da_classe = 0
+
+    for idx in range(1, qtd_imagens + 1):
+        img_atual = photo_name(diretorio, idx)
+        achados = count_class(img_atual, alvo, limiar_confianca)
+
+        if achados > 0:
+            fotos_positivas += 1
+            soma_da_classe += achados
+
+    percentual = (fotos_positivas / qtd_imagens) * 100
+
+    print(f"\nResultado para '{alvo}' na pasta '{diretorio}' (confiança >= {limiar_confianca}):")
+    print(f"Presente em {fotos_positivas} de {qtd_imagens} fotos ({percentual:.1f}%)")
+    print(f"Total de aparições da classe: {soma_da_classe}")
+
+    if soma_da_classe == 0:
+        print("Aviso: nenhuma ocorrência encontrada. Verifique se digitou o nome da classe corretamente.")
+
+
+# Opção 7
+def grafico_de_barras(limiar_confianca):
+    print("\n=== Gráfico de Barras da Pasta ===")
+    diretorio = ask_folder()
+    qtd_imagens = total_photos(diretorio)
+
+    print(f"\nDistribuição de objetos em '{diretorio}' (confiança >= {limiar_confianca}):\n")
+
+    for idx in range(1, qtd_imagens + 1):
+        img_atual = photo_name(diretorio, idx)
+        qtd_atual = count_objects(img_atual, limiar_confianca)
+
+        barra_visual = ""
+        for _ in range(qtd_atual):
+            barra_visual = barra_visual + "="
+
+        print(f"Foto {idx:02d} [{barra_visual}] {qtd_atual}")
+
+
+# Opção 8
+def ranking_top_n(resultados, limiar_confianca):
+    print("\n=== Ranking Top N ===")
+    inventario, ranking = montar_ranking(resultados, limiar_confianca)
+
+    if len(ranking) == 0:
         print("Nenhum objeto com essa confiança mínima.")
-    print()
+    else:
+        n_classes = pedir_inteiro(
+            f"Quantas classes mostrar (1 a {len(ranking)}): ", 1, len(ranking))
+
+        for posicao in range(n_classes):
+            nome_classe, quantidade = ranking[posicao]
+            print(f"{posicao + 1}. {nome_classe} - {quantidade}")
 
 
-def count_class_in_photo(conf):
-    print("\n--- Contar uma classe na foto ---")
-    photo = ask_photo()
-    name = ask_class_name()
-    print(f"Classe escolhida: [{name}]")
-    amount = count_class(photo, name, conf)
-    print(f"Objetos da classe '{name}' (confiança >= {conf}): {amount}")
+# Opção 9
+def busca_reversa(resultados, limiar_confianca):
+    print("\n=== Busca Reversa ===")
+    alvo = pedir_classe("Informe a classe (ex.: car, person): ")
+    indice_reverso = montar_indice_reverso(resultados, limiar_confianca)
+
+    if alvo not in indice_reverso:
+        print(f"A classe '{alvo}' não foi encontrada com confiança >= {limiar_confianca}.")
+    else:
+        print(f"Fotos com '{alvo}' (confiança >= {limiar_confianca}):")
+
+        for foto in indice_reverso[alvo]:
+            filtradas = filtrar_deteccoes(resultados[foto], limiar_confianca)
+            quantidade = contar_classe_em(filtradas, alvo)
+            print(f"  {foto}: {quantidade}")
+
+        print(f"Total de fotos: {len(indice_reverso[alvo])}")
 
 
-def folder_report(conf):
-    print("\n--- Relatório da pasta ---")
-    folder = ask_folder()
-    total = total_photos(folder)
-
-    objects = 0
-    empty = 0
-    for n in range(1, total + 1):
-        photo = photo_name(folder, n)
-        amount = count_objects(photo, conf)
-        print(f"Foto {n} | {photo} | {amount} objeto(s)")
-        objects += amount
-        if amount == 0:
-            empty += 1
-
-    print("\nTotal geral de objetos:", objects)
-    print(f"Média de objetos por foto: {objects / total:.2f}")
-    print("Fotos sem nenhum objeto:", empty)
-
-
-def fullest_and_emptiest(conf):
-    print("\n--- Foto mais cheia e Foto mais vazia ---")
-    folder = ask_folder()
-    total = total_photos(folder)
-
-    first = photo_name(folder, 1)
-    first_amount = count_objects(first, conf)
-    fullest, fullest_amount = first, first_amount
-    emptiest, emptiest_amount = first, first_amount
-
-    for n in range(2, total + 1):
-        photo = photo_name(folder, n)
-        amount = count_objects(photo, conf)
-        if amount > fullest_amount:
-            fullest, fullest_amount = photo, amount
-        if amount < emptiest_amount:
-            emptiest, emptiest_amount = photo, amount
-
-    print(f"\nFoto mais cheia: {fullest} ({fullest_amount} objetos)")
-    print(f"Foto mais vazia: {emptiest} ({emptiest_amount} objetos)")
-
-
-def search_class_in_folder(conf):
-    print("\n--- Procurar uma classe na pasta ---")
-    folder = ask_folder()
-    total = total_photos(folder)
-    name = ask_class_name()
-
-    photos_hit = 0
-    found = 0
-    for n in range(1, total + 1):
-        amount = count_class(photo_name(folder, n), name, conf)
-        if amount > 0:
-            photos_hit += 1
-            found += amount
-
-    print(f"\nClasse: '{name}' | pasta: '{folder}' | confiança >= {conf}")
-    print(f"Aparece em {photos_hit} de {total} fotos.")
-    print(f"Quantidade total encontrada: {found}")
-    print(f"Porcentagem de fotos com a classe: {photos_hit / total * 100:.1f}%")
-
-    if found == 0:
-        print("Nenhum encontrado. Confira se a classe está na lista acima.")
-
-
-def text_bar_chart(results, conf):
-    print("\n--- Gráfico de barras em texto ---")
-    folder = ask_folder()
-    total = total_photos(folder)
-
-    print(f"\nGráfico de objetos por foto na pasta '{folder}' (confiança >= {conf}):\n")
-
-    for n in range(1, total + 1):
-        photo = photo_name(folder, n)
-        amount = len(filter_detections(results[photo], conf))
-        print(f"{folder}_{n:02d} | {'#' * amount} ({amount})")
-
-
-def show_ranking(results, conf):
-    print("\n--- Ranking Top N ---")
-    _, ranking = build_ranking(results, conf)
-
-    if not ranking:
-        print("Nenhum objeto com essa confiança mínima.")
-        return
-
-    n = ask_int_in_range(f"Quantas classes mostrar (1 a {len(ranking)}): ", 1, len(ranking))
-    for position in range(n):
-        name, amount = ranking[position]
-        print(f"{position + 1}. {name} - {amount}")
-
-
-def reverse_search(results, conf):
-    print("\n--- Busca reversa ---")
-    name = ask_class_name()
-    index = build_reverse_index(results, conf)
-
-    if name not in index:
-        print(f"A classe '{name}' não foi encontrada com confiança >= {conf}.")
-        return
-
-    print(f"Fotos com '{name}' (confiança >= {conf}):")
-    for photo in index[name]:
-        amount = count_class_in(filter_detections(results[photo], conf), name)
-        print(f"  {photo}: {amount}")
-    print(f"Total de fotos: {len(index[name])}")
-
-
-def compare_folders(results, folder_photos, conf):
-    print("\n--- Comparar duas pastas ---")
+# Opção 10
+def comparar_pastas(resultados, fotos_por_pasta, limiar_confianca):
+    print("\n=== Comparação de Duas Pastas ===")
     print("Primeira pasta:")
-    folder_a = ask_folder()
+    pasta_a = ask_folder()
     print("Segunda pasta:")
-    folder_b = ask_folder()
+    pasta_b = ask_folder()
 
-    set_a = classes_of_folder(results, folder_photos, folder_a, conf)
-    set_b = classes_of_folder(results, folder_photos, folder_b, conf)
+    conjunto_a = classes_da_pasta(resultados, fotos_por_pasta, pasta_a, limiar_confianca)
+    conjunto_b = classes_da_pasta(resultados, fotos_por_pasta, pasta_b, limiar_confianca)
 
-    print(f"\nComparando '{folder_a}' e '{folder_b}' (confiança >= {conf}):\n")
-    show_set("Em comum", set_a.intersection(set_b))
-    show_set(f"Só em {folder_a}", set_a.difference(set_b))
-    show_set(f"Só em {folder_b}", set_b.difference(set_a))
-    show_set("União", set_a.union(set_b))
+    print(f"\nComparando '{pasta_a}' e '{pasta_b}' (confiança >= {limiar_confianca}):\n")
+
+    exibir_conjunto("Em comum", conjunto_a & conjunto_b)
+    exibir_conjunto(f"Só em {pasta_a}", conjunto_a - conjunto_b)
+    exibir_conjunto(f"Só em {pasta_b}", conjunto_b - conjunto_a)
+    exibir_conjunto("União", conjunto_a | conjunto_b)
 
 
-def show_matrix(results, folder_photos, conf):
-    print("\n--- Matriz pasta x classe ---")
-    _, ranking = build_ranking(results, conf)
+# Opção 11
+def exibir_matriz(resultados, fotos_por_pasta, limiar_confianca):
+    print("\n=== Matriz Pasta x Classe ===")
+    inventario, ranking = montar_ranking(resultados, limiar_confianca)
 
-    if not ranking:
+    if len(ranking) == 0:
         print("Nenhum objeto com essa confiança mínima.")
-        return
-
-    classes = [name for name, _ in ranking]
-    folders = list(folder_photos)
-    matrix = build_matrix(results, folder_photos, conf, classes)
-    row_totals, column_totals = matrix_totals(matrix)
-
-    print_matrix(folders, classes, matrix, row_totals, column_totals)
-
-    value, folder, class_name = find_largest(matrix, folders, classes)
-    print(f"\nMaior valor: {value} (pasta: {folder}, classe: {class_name})")
-
-
-def show_histogram(results, conf):
-    print("\n--- Histograma do inventário ---")
-    _, ranking = build_ranking(results, conf)
-
-    if not ranking:
-        print("Nenhum objeto com essa confiança mínima.")
-        return
-
-    print(f"\nObjetos por classe (confiança >= {conf}), da mais para a menos frequente:\n")
-    print_histogram(ranking)
-
-
-def export_report(results, conf, path):
-    print("\n--- Salvar relatório ---")
-    inventory, ranking = build_ranking(results, conf)
-    save_report(inventory, ranking, conf, path)
-    print(f"Relatório salvo em: {path}")
-
-
-def read_saved_report(path):
-    print("\n--- Ler relatório salvo ---")
-    read_report(path)
-
-
-def inventory_option(results, folder_photos, conf):
-    show_folders()
-    prompt = "Digite o nome da pasta (ou Enter para o acervo inteiro): "
-    folder = input(prompt).strip()
-    while folder and folder not in folder_photos:
-        print("Pasta inválida. Tente novamente.")
-        folder = input(prompt).strip()
-
-    if folder:
-        photos = folder_photos[folder]
-        title = f"pasta '{folder}' (confiança >= {conf})"
     else:
-        photos = list(results)
-        title = f"acervo inteiro (confiança >= {conf})"
+        # Colunas na ordem do ranking (mais frequente primeiro)
+        classes = []
+        for nome_classe, quantidade in ranking:
+            classes.append(nome_classe)
 
-    show_inventory(build_inventory(results, photos, conf), title)
+        pastas = list(fotos_por_pasta)
+        matriz = montar_matriz(resultados, fotos_por_pasta, limiar_confianca, classes)
+        totais_linhas, totais_colunas = totais_da_matriz(matriz)
 
+        imprimir_matriz(pastas, classes, matriz, totais_linhas, totais_colunas)
 
-# ---------- MENU E PRINCIPAL ----------
-
-MENU_TEXT = [
-    "Configurar confiança mínima",
-    "Analisar uma foto",
-    "Contar uma classe na foto",
-    "Relatório da pasta",
-    "Foto mais cheia e mais vazia",
-    "Procurar uma classe na pasta",
-    "Gráfico de barras em texto",
-    "Ranking Top N",
-    "Busca reversa",
-    "Comparar duas pastas",
-    "Matriz pasta x classe",
-    "Histograma do inventário",
-    "Salvar relatório (report.txt)",
-    "Ler relatório salvo",
-    "Inventário (acervo ou pasta)",
-]
+        valor, pasta_top, classe_top = maior_da_matriz(matriz, pastas, classes)
+        print(f"\nMaior valor: {valor} (pasta: {pasta_top}, classe: {classe_top})")
 
 
-def show_menu():
-    print("        Menu do PhotoCensus\n")
-    for number, text in enumerate(MENU_TEXT, start=1):
-        print(f"        {number} --> {text}")
-    print("        0 --> Sair")
+# Opção 12
+def exibir_histograma(resultados, limiar_confianca):
+    print("\n=== Histograma do Inventário ===")
+    inventario, ranking = montar_ranking(resultados, limiar_confianca)
 
+    if len(ranking) == 0:
+        print("Nenhum objeto com essa confiança mínima.")
+    else:
+        print(f"\nObjetos por classe (confiança >= {limiar_confianca}), "
+              f"da mais para a menos frequente:\n")
+        imprimir_histograma(ranking)
+
+
+# Opção 13
+def exportar_relatorio(resultados, limiar_confianca):
+    print("\n=== Salvar Relatório ===")
+    inventario, ranking = montar_ranking(resultados, limiar_confianca)
+    salvar_relatorio(inventario, ranking, limiar_confianca, ARQUIVO_RELATORIO)
+    print(f"Relatório salvo em: {ARQUIVO_RELATORIO}")
+
+
+# Opção 14
+def mostrar_relatorio_salvo():
+    print("\n=== Ler Relatório Salvo ===")
+    ler_relatorio(ARQUIVO_RELATORIO)
+
+
+# Opção 15
+def inventario_do_acervo_ou_pasta(resultados, fotos_por_pasta, limiar_confianca):
+    print("\n=== Inventário ===")
+    show_folders()
+
+    pasta_escolhida = input("Pasta (ou Enter para o acervo inteiro): ").strip()
+    while pasta_escolhida != "" and pasta_escolhida not in fotos_por_pasta:
+        print("Erro: essa pasta não foi encontrada.")
+        pasta_escolhida = input("Pasta (ou Enter para o acervo inteiro): ").strip()
+
+    if pasta_escolhida == "":
+        lista_fotos = list(resultados)
+        titulo = f"acervo inteiro (confiança >= {limiar_confianca})"
+    else:
+        lista_fotos = fotos_por_pasta[pasta_escolhida]
+        titulo = f"pasta '{pasta_escolhida}' (confiança >= {limiar_confianca})"
+
+    inventario = montar_inventario(resultados, lista_fotos, limiar_confianca)
+    exibir_inventario(inventario, titulo)
+
+
+# ==================== PRINCIPAL ====================
 
 def main():
-    print("PhotoCensus - Group 07")
+    limiar_confianca = 0.5
+    rodando = True
 
-    exception = True
-    conf = 0.5
-    results, folder_photos = load_collection()
-    show_summary(results, folder_photos, conf)
+    # O acervo é carregado uma única vez, para as opções 8 a 15.
+    resultados, fotos_por_pasta = carregar_acervo()
+    exibir_resumo(resultados, fotos_por_pasta, limiar_confianca)
 
+    while rodando:
+        exibir_menu()
+        escolha = input("Sua opção: ").strip()
 
-    while exception:
-        show_menu()
-        choice = input("Escolha uma opção: ").strip()
+        if escolha == "0":
+            print("Encerrando o PhotoCensus. Até logo!")
+            rodando = False
 
-        if choice == "0":
-            exception=False
-        elif choice == "1":
-            conf = set_confidence(results, folder_photos, conf)
-        elif choice == "2":
-            analyze_photo(results, conf)
-        elif choice == "3":
-            count_class_in_photo(conf)
-        elif choice == "4":
-            folder_report(conf)
-        elif choice == "5":
-            fullest_and_emptiest(conf)
-        elif choice == "6":
-            search_class_in_folder(conf)
-        elif choice == "7":
-            text_bar_chart(results, conf)
-        elif choice == "8":
-            show_ranking(results, conf)
-        elif choice == "9":
-            reverse_search(results, conf)
-        elif choice == "10":
-            compare_folders(results, folder_photos, conf)
-        elif choice == "11":
-            show_matrix(results, folder_photos, conf)
-        elif choice == "12":
-            show_histogram(results, conf)
-        elif choice == "13":
-            export_report(results, conf, REPORT_PATH)
-        elif choice == "14":
-            read_saved_report(REPORT_PATH)
-        elif choice == "15":
-            inventory_option(results, folder_photos, conf)
+        elif escolha == "1":
+            limiar_confianca = ajustar_confianca(resultados, fotos_por_pasta, limiar_confianca)
+
+        elif escolha == "2":
+            inspecionar_foto(limiar_confianca)
+
+        elif escolha == "3":
+            contar_classe_na_foto(limiar_confianca)
+
+        elif escolha == "4":
+            relatorio_da_pasta(limiar_confianca)
+
+        elif escolha == "5":
+            foto_mais_cheia_e_mais_vazia(limiar_confianca)
+
+        elif escolha == "6":
+            buscar_classe_na_pasta(limiar_confianca)
+
+        elif escolha == "7":
+            grafico_de_barras(limiar_confianca)
+
+        elif escolha == "8":
+            ranking_top_n(resultados, limiar_confianca)
+
+        elif escolha == "9":
+            busca_reversa(resultados, limiar_confianca)
+
+        elif escolha == "10":
+            comparar_pastas(resultados, fotos_por_pasta, limiar_confianca)
+
+        elif escolha == "11":
+            exibir_matriz(resultados, fotos_por_pasta, limiar_confianca)
+
+        elif escolha == "12":
+            exibir_histograma(resultados, limiar_confianca)
+
+        elif escolha == "13":
+            exportar_relatorio(resultados, limiar_confianca)
+
+        elif escolha == "14":
+            mostrar_relatorio_salvo()
+
+        elif escolha == "15":
+            inventario_do_acervo_ou_pasta(resultados, fotos_por_pasta, limiar_confianca)
+
         else:
-            print("Escolha incorreta. Escolha uma opção válida\n")
-
-
+            print("Opção inválida! Escolha um número de 0 a 15.")
 
 
 if __name__ == "__main__":
-
     main()
+
+
+
 
