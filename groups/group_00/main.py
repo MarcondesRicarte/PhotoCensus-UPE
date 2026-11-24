@@ -39,6 +39,13 @@ def load_collection():
 
     return resultados
 
+def ler_inteiro(mensagem):
+    while True:
+        entrada = input(mensagem)
+        if entrada.isdigit():
+            return int(entrada)
+        print("Entrada inválida. Por favor digite um número inteiro.")
+
 def filter_detections(detections, min_confidence):
     filtered = []
     for class_name, confidence in detections:
@@ -199,6 +206,137 @@ def show_matrix(resultados, min_confidence):
     print(f"{'Total':<13}" + "".join(f"{total:>8}" for total in col_totals))
     print(f"\nMaior valor: {best_class} na pasta {best_folder} ({best_value})")
 
+def create_report_text(inventory, ranking):
+    """Monta o conteúdo do relatório e devolve como texto."""
+    lines = []
+    lines.append("RELATÓRIO DO ACERVO")
+    lines.append("===================")
+    lines.append("")
+    lines.append("INVENTÁRIO:")
+
+    for class_name, amount in inventory.items():
+        lines.append(f"{class_name}: {amount}")
+
+    lines.append("")
+    lines.append("RANKING:")
+
+    position = 1
+    for class_name, amount in ranking:
+        lines.append(f"{position}. {class_name}: {amount}")
+        position += 1
+
+    return "\n".join(lines)
+
+
+def save_report(inventory, ranking):
+    """Salva inventário e ranking no arquivo report.txt."""
+    report_text = create_report_text(inventory, ranking)
+
+    with open("report.txt", "w", encoding="utf-8") as file:
+        file.write(report_text)
+    
+    print("Relatório salvo em report.txt.")
+
+
+
+def read_report():
+    """Lê report.txt e devolve o conteúdo."""
+    try:
+        with open("report.txt", "r", encoding="utf-8") as file:
+            return file.read()
+    except FileNotFoundError:
+        return "O arquivo report.txt ainda não foi criado."
+
+
+def show_inventory_histogram(ranking):
+    """Exibe as classes em ordem do ranking, com barras de #."""
+    if not ranking:
+        print("Nenhum objeto encontrado.")
+        return
+
+    print("\n=== HISTOGRAMA DO INVENTÁRIO ===")
+
+    for class_name, amount in ranking:
+        bar = "#" * amount
+        print(f"{class_name:<15} {amount:>4} | {bar}")
+
+def analyze_photo(nivel_confianca):
+    """lógica que estava dentro da opção 2."""
+    print("Você escolheu analisar uma foto")
+    print("-" * 30)
+    show_folders()
+    pasta = input("Digite o nome da pasta: ")
+                
+    # Verificando se a pasta informada existe atraves do folder exists
+    while not folder_exists(pasta):
+        print("Pasta não encontrada!")
+        pasta = input("Tente novamente: ")
+                
+    total = total_photos(pasta)
+    numero = ler_inteiro("Digite o número da foto: ")
+                
+    # Validadando o número digitado
+    while numero < 1 or numero > total:
+        print("Número inválido!")
+        numero = ler_inteiro("Digite novamente: ")
+    
+    # Guardando resultado (Caminho) na variavel foto
+    foto = photo_name(pasta, numero)
+    quantidade = count_objects(foto, nivel_confianca)
+    
+    principal = main_object(foto)
+    maior_confianca = max_confidence(foto)
+    porcentagem = maior_confianca * 100
+    
+    print(f"Caminho: {foto}")
+    print(f"Quantidade de objetos: {quantidade}")
+    print(f"Objeto principal: {principal}")
+    print(f"Maior confiança: {porcentagem:.0f} %")
+    print('-'*30)
+    print("Confiança mínima:", nivel_confianca)
+
+def show_folder_report(nivel_confianca):
+    """lógica que estava dentro da opção 4."""
+    print("Você escolheu relatório da pasta")
+    print("-" * 30)
+    
+    # choose folder  
+    # Escolhendo a pasta validada com um while
+    show_folders()
+    folder = input('Digite o nome da pasta: ').strip()
+    while not folder_exists(folder):
+        print('Pasta inválida! Tente novamente.')
+        folder = input('Digite o nome da pasta:').strip()
+    
+    # total folder photos
+    # total de fotos na pasta e contagem dos objetos com as fotos vazias
+    total = total_photos(folder)
+    total_objects = 0
+    empty_photos = 0
+    
+    print(f'\nPasta: {folder} | Confiança mínima: {nivel_confianca}')
+    print('-' * 30)
+    
+    # examination of the photos in the folders
+    # examinação das fotos nas pastas ( iniciando em 1)
+    for number in range(1, total + 1):
+        photo = photo_name(folder, number)
+        amount = count_objects(photo, nivel_confianca)
+        print(f'Foto {number}: {amount} objeto(s)')
+        total_objects += amount 
+        if amount == 0:
+            empty_photos += 1
+    
+    # average of objects per photo
+    # média de objetos por foto 
+    avarage = total_objects / total
+                    
+    print('-' * 30)
+    print('Total geral de objetos:', total_objects)
+    print(f'Média de objetos por foto: {avarage:.2f}')
+    print('Fotos sem nenhum objeto:', empty_photos)
+    print('-' * 30)
+
 
 def main():
     nivel_confianca = 0.5
@@ -222,14 +360,10 @@ def main():
         print(" 12 - Busca reversa.")
         print(" 13 - Comparar pastas.")
         print(" 14 - Matriz pasta x classe.")
+        print(" 15 - Histograma em texto.")
+        print(" 16 - Salvar relatório.")
+        print(" 17 - Ler relatório.")
         print(" 0 - Sair. ")
-
-        def ler_inteiro(mensagem):
-            while True:
-                entrada = input(mensagem)
-                if entrada.isdigit():
-                    return int(entrada)
-                print("Entrada inválida. Por favor digite um número inteiro.")
         
         
         option = input("Escolha uma opção: ")
@@ -263,37 +397,7 @@ def main():
             nivel_confianca = confianca
 
         elif option == 2:
-            print("Você escolheu analisar uma foto")
-            print("-" * 30)
-            show_folders()
-            pasta = input("Digite o nome da pasta: ")
-            
-            # Verificando se a pasta informada existe atraves do folder exists
-            while not folder_exists(pasta):
-                print("Pasta não encontrada!")
-                pasta = input("Tente novamente: ")
-            
-            total = total_photos(pasta)
-            numero = ler_inteiro("Digite o número da foto: ")
-            
-            # Validadando o número digitado
-            while numero < 1 or numero > total:
-                print("Número inválido!")
-                numero = ler_inteiro("Digite novamente: ")
-
-            # Guardando resultado (Caminho) na variavel foto
-            foto = photo_name(pasta, numero)
-            quantidade = count_objects(foto, nivel_confianca)
-
-            principal = main_object(foto)
-            maior_confianca = max_confidence(foto)
-            porcentagem = maior_confianca * 100
-
-            print(f"Caminho: {foto}")
-            print(f"Quantidade de objetos: {quantidade}")
-            print(f"Objeto principal: {principal}")
-            print(f"Maior confiança: {porcentagem:.0f} %")
-            print('-'*30)
+            analyze_photo(nivel_confianca)
             
 
         elif option == 3:
@@ -327,47 +431,8 @@ def main():
             print('-'*30)
  
         elif option == 4:
-            print("Você escolheu relatório da pasta")
-            print("-" * 30)
-
-            # choose folder  
-            # Escolhendo a pasta validada com um while
-            show_folders()
-            folder = input('Digite o nome da pasta: ').strip()
-            while not folder_exists(folder):
-                print('Pasta inválida! Tente novamente.')
-                folder = input('Digite o nome da pasta:').strip()
-
-            # total folder photos
-            # total de fotos na pasta e contagem dos objetos com as fotos vazias
-            total = total_photos(folder)
-            total_objects = 0
-            empty_photos = 0
-
-            print(f'\nPasta: {folder} | Confiança mínima: {nivel_confianca}')
-            print('-' * 30)
-
-            # examination of the photos in the folders
-            # examinação das fotos nas pastas ( iniciando em 1)
-            for number in range(1, total + 1):
-                photo = photo_name(folder, number)
-                amount = count_objects(photo, nivel_confianca)
-                print(f'Foto {number}: {amount} objeto(s)')
-                total_objects += amount 
-                if amount == 0:
-                    empty_photos += 1
-
-            # average of objects per photo
-            # média de objetos por foto 
-            avarage = total_objects / total
+            show_folder_report(nivel_confianca)
                 
-            print('-' * 30)
-            print('Total geral de objetos:', total_objects)
-            print(f'Média de objetos por foto: {avarage:.2f}')
-            print('Fotos sem nenhum objeto:', empty_photos)
-            print('-' * 30)
-            
-            
 
         elif option == 5:
             print("Você escolheu foto mais cheia e mais vazia")
@@ -544,6 +609,21 @@ def main():
 
         elif option == 14:
             show_matrix(resultados, nivel_confianca)
+
+        elif option == 15:
+            inventory = build_inventory(resultados,list(resultados),nivel_confianca)
+
+            ranking = bubble_sort_desc(list(inventory.items()))
+            show_inventory_histogram(ranking)
+        
+        
+        elif option == 16:
+            inventory = build_inventory(resultados,list(resultados),nivel_confianca)
+            ranking = bubble_sort_desc(list(inventory.items()))
+            save_report(inventory, ranking)
+
+        elif option == 17:
+            print(read_report())
 
         
         else:
